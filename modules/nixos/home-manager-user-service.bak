@@ -1,0 +1,108 @@
+# Home Manager useUserService module
+# Backport of https://github.com/nix-community/home-manager/pull/6981
+#
+# This module adds the `home-manager.useUserService` option that activates
+# home-manager environments via systemd user services at login instead of
+# system services at boot. Useful for encrypted home directories (pam_mount).
+#
+# Usage:
+#   home-manager.useUserService = true;
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
+
+let
+  cfg = config.home-manager or { };
+  hmUsers = cfg.users or { };
+  useUserService = cfg.useUserService or false;
+
+  # Drop-in path for systemd user service
+  hmDropIn = "/share/systemd/user/home-manager.service.d";
+
+  baseService = username: {
+    Type = "oneshot";
+    RemainAfterExit = "yes";
+    TimeoutStartSec = "5m";
+    SyslogIdentifier = "hm-activate-${username}";
+  };
+
+  baseUnit = username: {
+    description = "Home Manager environment for ${username}";
+    stopIfChanged = false;
+    serviceConfig = baseService username;
+    environment = lib.mkMerge [
+      {
+        # needed to run qt programs like kwriteconfig
+        QT_QPA_PLATFORM = "offscreen";
+      }
+      (lib.mkIf (cfg.verbose or false) { VERBOSE = "1"; })
+      (lib.mkIf ((cfg.backupFileExtension or null) != null) {
+        HOME_MANAGER_BACKUP_EXT = cfg.backupFileExtension;
+      })
+    ];
+  };
+in
+{
+  options.home-manager.useUserService = lib.mkEnableOption ''
+    Activate each user's environment only when they log in, using a
+    systemd user service, instead of activating all configured users'
+    environments proactively during boot-up.
+
+    This mode is necessary if users' home directories are not
+    available until they log in (for example, when using pam_mount).
+
+    Other usage scenarios are still experimental. It may speed up
+    boot when there are many users; this has not yet been confirmed.
+    It could break configurations where the configured users do not
+    (or do not always) run their processes within a complete
+    systemd-managed user context.
+  '';
+
+  config = lib.mkIf (hmUsers != { } && useUserService) {
+    # Disable the default system service activation
+    # by overriding it to be empty when useUserService is enabled
+    systemd.services = lib.mapAttrs' (
+      _: usercfg:
+      let
+        inherit (usercfg.home) username;
+      in
+      lib.nameValuePair "home-manager-${lib.strings.escapeNixIdentifier username}" {
+        # Effectively disable by removing wantedBy
+        wantedBy = lib.mkForce [ ];
+        enable = lib.mkForce false;
+      }
+    ) hmUsers;
+
+    # Create a systemd user service template
+    systemd.user.services.home-manager = (baseUnit "%u") // {
+      # user units cannot depend on system units
+      unitConfig.RequiresMountsFor = "%h";
+      # ExecStart will be overridden by the drop-in below
+    };
+
+    # Add per-user drop-ins that specify the activation package
+    users.users = lib.mapAttrs (
+      _:
+      { home, ... }:
+      {
+        packages = [
+          (pkgs.writeTextDir "${hmDropIn}/10-user-activation.conf" ''
+            [Service]
+            ExecStart=${home.activationPackage}/activate
+          '')
+        ];
+      }
+    ) hmUsers;
+
+    environment.pathsToLink = [ hmDropIn ];
+
+    # Restart user service on system activation
+    system.userActivationScripts.home-manager = {
+      text = "${pkgs.systemd}/bin/systemctl --user restart home-manager";
+      deps = [ ];
+    };
+  };
+}
