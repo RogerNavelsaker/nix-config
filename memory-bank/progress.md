@@ -11,7 +11,7 @@ tags:
 
 ## Current Status
 
-Project setup complete with working flake configuration. Repository renamed from nixos-config.
+Git history sanitized (squashed to 1 commit). Remote URL corrected. SSH private key removed from history. Repository renamed from nixos-config.
 
 ## What Works
 
