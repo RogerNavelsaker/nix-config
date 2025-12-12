@@ -214,35 +214,35 @@
         ]
       },
       "locked": {
-        "lastModified": 1765402940,
+        "lastModified": 1765451795,
         "narHash": "sha256-LnCCC9LPhnLC+IECzADPvLS9hCSh1itwxWVYndszTis=",
-        "ref": "refs/heads/main",
-        "rev": "7c5cd2ac5ce400bb731d9a6349ca65d01cc46407",
-        "revCount": 3,
-        "type": "git",
-        "url": "file:///home/rona/Repositories/nix-repos/nix-lib"
+        "owner": "hellst0rm",
+        "repo": "nix-lib",
+        "rev": "fd9a81f9fd3925fadc5533df8de1b2bb2441d870",
+        "type": "github"
       },
       "original": {
-        "type": "git",
-        "url": "file:///home/rona/Repositories/nix-repos/nix-lib"
+        "owner": "hellst0rm",
+        "repo": "nix-lib",
+        "type": "github"
       }
     },
-    "nixos-secrets": {
+    "nix-secrets": {
       "flake": false,
       "locked": {
-        "lastModified": 1764766046,
-        "narHash": "sha256-Co5xXGTaUOJEfBf3/uXnNoNlK/FwfXi/oLON88WzLnE=",
+        "lastModified": 1765539738,
+        "narHash": "sha256-Rp4DuLkbj+ThJfSc76dSYUfY1yBjx5LtsulQKQU5P4w=",
         "ref": "main",
-        "rev": "e5867140f57e5911cb146731c3f369076fdb82a1",
+        "rev": "6a3243a0299fbcb729d8a0795d438d976ae15401",
         "shallow": true,
         "type": "git",
-        "url": "ssh://git@github-nixos-secrets/hellst0rm/nixos-secrets.git"
+        "url": "ssh://git@github-nix-secrets/hellst0rm/nix-secrets.git"
       },
       "original": {
         "ref": "main",
         "shallow": true,
         "type": "git",
-        "url": "ssh://git@github-nixos-secrets/hellst0rm/nixos-secrets.git"
+        "url": "ssh://git@github-nix-secrets/hellst0rm/nix-secrets.git"
       }
     },
     "nixpkgs": {
@@ -341,7 +341,7 @@
         "home-manager": "home-manager",
         "impermanence": "impermanence",
         "nix-lib": "nix-lib",
-        "nixos-secrets": "nixos-secrets",
+        "nix-secrets": "nix-secrets",
         "nixpkgs": "nixpkgs",
         "nixpkgs-master": "nixpkgs-master",
         "nixpkgs-stable": "nixpkgs-stable",
