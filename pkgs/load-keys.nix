@@ -20,7 +20,7 @@ pog.pog {
     # Copies keys from flat structure:
     #   <source>/etc/ssh/* → <target>/etc/ssh/
     #   <source>/root/.ssh/* → <target>/root/.ssh/
-    #   <source>/home/*/.ssh/* → <target>/home/*/.ssh/
+    #   <source>/users/*/.ssh/* → <target>/home/*/.ssh/
 
     SOURCE_DIR="$1"
     TARGET_ROOT="''${2:-/}"
@@ -51,8 +51,8 @@ pog.pog {
     fi
 
     # Load user keys
-    if [ -d "$SOURCE_DIR/home" ]; then
-      for user_dir in "$SOURCE_DIR/home"/*; do
+    if [ -d "$SOURCE_DIR/users" ]; then
+      for user_dir in "$SOURCE_DIR/users"/*; do
         if [ -d "$user_dir/.ssh" ]; then
           username=$(basename "$user_dir")
           # Check if user exists (skip in initramfs where 'id' may not work)

@@ -214,11 +214,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1765451795,
-        "narHash": "sha256-LnCCC9LPhnLC+IECzADPvLS9hCSh1itwxWVYndszTis=",
+        "lastModified": 1765658782,
+        "narHash": "sha256-RvVtRxKKPmz8RN1hmbeRzELoZQWKTBdYTVGWrN2opzA=",
         "owner": "hellst0rm",
         "repo": "nix-lib",
-        "rev": "fd9a81f9fd3925fadc5533df8de1b2bb2441d870",
+        "rev": "f9cb76b50bc5bc920e701aa82f4cef965c30b913",
         "type": "github"
       },
       "original": {
@@ -230,10 +230,10 @@
     "nix-secrets": {
       "flake": false,
       "locked": {
-        "lastModified": 1765539738,
-        "narHash": "sha256-Rp4DuLkbj+ThJfSc76dSYUfY1yBjx5LtsulQKQU5P4w=",
+        "lastModified": 1765653553,
+        "narHash": "sha256-oBxIF+5HmtcAMaMlIaUsA09qUtqMYVEWYQPKTa+14ag=",
         "ref": "main",
-        "rev": "6a3243a0299fbcb729d8a0795d438d976ae15401",
+        "rev": "603082197488425301045acb72b43a93d8a22ecf",
         "shallow": true,
         "type": "git",
         "url": "ssh://git@github-nix-secrets/hellst0rm/nix-secrets.git"

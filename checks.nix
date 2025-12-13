@@ -71,7 +71,7 @@ let
       ''
         # Check that feature directories exist
         test -d ${pathFromRoot "hosts/features"} || (echo "hosts/features not found" && exit 1)
-        test -d ${pathFromRoot "home/features"} || (echo "home/features not found" && exit 1)
+        test -d ${pathFromRoot "users/features"} || (echo "users/features not found" && exit 1)
 
         # Check that default/opt-in/opt-out subdirectories exist
         test -d ${pathFromRoot "hosts/features/default"} || (echo "hosts/features/default not found" && exit 1)
