@@ -14,7 +14,7 @@ tags:
 ### Core
 
 - **NixOS**: 25.11 (stable)
-- **Nix**: Flakes enabled
+- **Nix**: Determinate Nix 3.14.0 (Nix 2.32.4) - flakes enabled by default
 - **Home Manager**: release-25.11
 
 ### Flake Inputs

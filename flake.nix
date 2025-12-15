@@ -3,6 +3,7 @@
   description = "System config flake";
 
   nixConfig = {
+    # FlakeHub cache handled by determinate-nix, keep only third-party caches
     extra-substituters = [
       "https://cachix.cachix.org"
       "https://nix-community.cachix.org"
@@ -15,22 +16,23 @@
   };
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-25.11";
-    nixpkgs-stable.url = "github:nixos/nixpkgs/nixos-25.11";
-    nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
+    # FlakeHub URLs for version management and caching
+    nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0.2511.*.tar.gz";
+    nixpkgs-stable.url = "https://flakehub.com/f/NixOS/nixpkgs/0.2511.*.tar.gz";
+    nixpkgs-unstable.url = "https://flakehub.com/f/NixOS/nixpkgs/0.1.*.tar.gz";
     nixpkgs-master.url = "github:nixos/nixpkgs/master";
 
-    systems.url = "github:nix-systems/default-linux";
+    systems.url = "https://flakehub.com/f/nix-systems/default-linux/0.1.*.tar.gz";
 
-    # Shared library for NixOS/Home Manager builders
+    # Shared library for NixOS/Home Manager builders (FlakeHub)
     nix-lib = {
-      url = "github:hellst0rm/nix-lib";
+      url = "https://flakehub.com/f/RogerNavelsaker/nix-lib/*.tar.gz";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.systems.follows = "systems";
     };
 
     home-manager = {
-      url = "github:nix-community/home-manager/release-25.11";
+      url = "https://flakehub.com/f/nix-community/home-manager/0.2511.*.tar.gz";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -43,7 +45,7 @@
     hardware.url = "github:nixos/nixos-hardware";
 
     disko = {
-      url = "github:nix-community/disko";
+      url = "https://flakehub.com/f/nix-community/disko/1.*.tar.gz";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -57,6 +59,9 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # Determinate Nix module for FlakeHub integration
+    determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/*";
+
     pog = {
       url = "github:jpetrucciani/pog";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -67,8 +72,9 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # Private flake on FlakeHub
     nix-secrets = {
-      url = "git+ssh://git@github-nix-secrets/hellst0rm/nix-secrets.git?ref=main&shallow=1";
+      url = "https://flakehub.com/f/RogerNavelsaker/nix-secrets/*.tar.gz";
       flake = false;
     };
   };
