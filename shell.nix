@@ -2,13 +2,8 @@
 let
   inherit (pkgs.stdenv.hostPlatform) system;
 
-  scripts = import ./scripts {
-    inherit pkgs;
-    inherit (inputs.pog.packages.${system}) pog;
-  };
-
   pre-commit-check = inputs.git-hooks.lib.${system}.run {
-    src = ./.;
+    src = self;
     hooks = import ./githooks.nix { inherit pkgs; };
   };
 in
@@ -29,11 +24,11 @@ in
         os switch -H <host>   Build & switch NixOS (specific host)
         hm switch             Build & switch Home Manager
         hm switch -c <u@h>    Build & switch Home Manager (specific config)
-        iso <action>          ISO management (build/run/stop/ssh/log)
         check                 Run all flake checks
         search <pkg>          Search nixpkgs
         menu                  Show all commands
 
+      Note: ISO management moved to nix-repos workspace.
       Run 'menu' for complete command list with categories.
     '';
 
@@ -58,10 +53,6 @@ in
 
       # Build system
       gnumake
-
-      # Virtualization
-      qemu
-      OVMF
     ];
 
     commands = [
@@ -157,17 +148,6 @@ in
           nix flake lock --update-input "$1"
         '';
       }
-
-      # ISO Management Category
-      {
-        name = "iso";
-        category = "iso";
-        help = "ISO management: iso <build|run|stop|restart|status|ssh|log> (--help for details)";
-        command = ''
-          ${scripts.iso}/bin/iso "$@"
-        '';
-      }
-
     ];
 
     devshell.startup = {

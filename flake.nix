@@ -3,7 +3,6 @@
   description = "System config flake";
 
   nixConfig = {
-    # FlakeHub cache handled by determinate-nix, keep only third-party caches
     extra-substituters = [
       "https://cachix.cachix.org"
       "https://nix-community.cachix.org"
@@ -16,16 +15,13 @@
   };
 
   inputs = {
-    # FlakeHub URLs for version management and caching
-    nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0.2511.*.tar.gz";
-    nixpkgs-stable.url = "https://flakehub.com/f/NixOS/nixpkgs/0.2511.*.tar.gz";
-    nixpkgs-unstable.url = "https://flakehub.com/f/NixOS/nixpkgs/0.1.*.tar.gz";
-    nixpkgs-master.url = "github:nixos/nixpkgs/master";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-24.11";
+    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs-master.url = "github:NixOS/nixpkgs/master";
 
     systems.url = "github:nix-systems/default-linux";
 
-    # Shared library for NixOS/Home Manager builders
-    # TODO: Switch to FlakeHub once published: https://flakehub.com/f/RogerNavelsaker/nix-lib/*.tar.gz
     nix-lib = {
       url = "github:RogerNavelsaker/nix-lib";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -33,7 +29,7 @@
     };
 
     home-manager = {
-      url = "https://flakehub.com/f/nix-community/home-manager/0.2511.*.tar.gz";
+      url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -43,10 +39,10 @@
     };
 
     impermanence.url = "github:nix-community/impermanence";
-    hardware.url = "github:nixos/nixos-hardware";
+    hardware.url = "github:NixOS/nixos-hardware";
 
     disko = {
-      url = "https://flakehub.com/f/nix-community/disko/1.*.tar.gz";
+      url = "github:nix-community/disko";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -60,8 +56,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # Determinate Nix module for FlakeHub integration
-    determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/*";
+    determinate.url = "github:DeterminateSystems/determinate";
 
     pog = {
       url = "github:jpetrucciani/pog";
@@ -73,9 +68,9 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # Private flake on FlakeHub
+    # Private repo - use git+file for local dev
     nix-secrets = {
-      url = "https://flakehub.com/f/RogerNavelsaker/nix-secrets/*.tar.gz";
+      url = "git+file:../nix-secrets";
       flake = false;
     };
   };
