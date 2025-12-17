@@ -10,11 +10,10 @@ tags:
 # Progress - nix-config
 
 ## Current Status
+GPG/Yubikey boot-time key unlock refactored. ISO uses load-keys.nix with mktemp for GNUPGHOME and hostname from config.hostSpec.hostname. Injection archive created by nix-keys, Ventoy disk assembled by nix-repos, QEMU testing in nix-repos.
 
-Repository public on GitHub. Memory structure migrated to .agent-memory/ with kebab-case files. 4 reusable patterns extracted to global memory. Git history clean.
 
 ## What Works
-
 - [x] Flake with all inputs configured
 - [x] Host definitions (nanoserver, iso)
 - [x] Home Manager integration
@@ -26,6 +25,9 @@ Repository public on GitHub. Memory structure migrated to .agent-memory/ with ke
 - [x] Repository made public
 - [x] Memory structure (.agent-memory/ with kebab-case)
 - [x] Patterns extracted to global memory
+- [x] GPG/Yubikey boot-time key unlock (load-keys.nix)
+- [x] Cross-repo architecture: nix-config (ISO) + nix-keys (injection) + nix-repos (Ventoy/QEMU)
+
 
 ## What's Left
 

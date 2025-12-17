@@ -76,3 +76,35 @@ Each feature is a standalone NixOS module.
 - extracted_to [[patterns/nix-os-host-definition-pattern]]
 - extracted_to [[patterns/nix-os-feature-module-pattern]]
 - extracted_to [[patterns/nix-development-shell-pattern]]
+
+
+### GPG/Yubikey Boot-time Key Unlock Pattern
+
+Cross-repo architecture for secure key injection:
+
+```
+nix-config (ISO build)
+    │
+    └── hosts/iso/load-keys.nix
+        ├── postDeviceCommands: Mount Ventoy, start pcscd/gpg-agent
+        └── postMountCommands: GPG decrypt from pass store → /etc/ssh/
+
+nix-keys (injection archive)
+    │
+    └── scripts/create.nix
+        ├── archive: Decrypted keys (requires Yubikey)
+        └── injection: Encrypted pass store for Ventoy
+
+nix-repos (orchestration + QEMU)
+    │
+    ├── scripts/ventoy.nix: Create Ventoy disk (ISO + injection)
+    └── scripts/iso.nix: QEMU testing (build, run, ssh, log)
+```
+
+Key principles:
+- Keys encrypted on disk, decrypted at boot with Yubikey
+- Injection archive structure: `{private,public}/{hosts,users}/{hostname,username,common}/`
+- No Yubikey needed to create Ventoy disk (only at boot)
+- Hostname from `config.hostSpec.hostname`, not hardcoded
+- GNUPGHOME via `mktemp -d` for clean environment
+

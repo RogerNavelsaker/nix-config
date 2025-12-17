@@ -10,19 +10,20 @@ tags:
 # Active Context - nix-config
 
 ## Current Focus
+Home-manager standalone setup for non-NixOS hosts complete.
 
-Repository renaming and nix-lib integration.
 
 ## Recent Events
-
-1. [2025-12-15] Migrated CachyOS host from standard Nix to Determinate Nix 3.14.0
-2. [2025-12-13] Simplified ISO to Ventoy-only boot (removed QEMU SquashFS support)
-3. [2025-12-12] Added `iso ventoy` action for QEMU testing with Ventoy + key injection
-4. [2025-12-12] Renamed memory-bank/ to .agent-memory/ with kebab-case files
-5. [2025-12-12] Made nix-config repo public on GitHub
-6. [2025-12-12] Extracted 4 patterns to global ~/.agent-memory/patterns/
-7. [2025-12-11] Git history fully sanitized - squashed to single commit
-8. [2025-12-11] Fixed remote URL (was nix-secrets.git → now nix-config.git)
+1. [2025-12-17] Added home-manager config for rona@aio (Arch Linux host)
+2. [2025-12-17] Switched from Determinate Nix to standard Nix 2.33.0
+3. [2025-12-17] Updated nix-secrets to use deploy key URL (github-nix-secrets)
+4. [2025-12-17] Removed determinate input from flake
+5. [2025-12-17] Refactored GPG/Yubikey boot-time key unlock architecture
+6. [2025-12-17] Split injection archive creation to nix-keys, Ventoy disk to nix-repos
+7. [2025-12-17] Updated load-keys.nix: mktemp for GNUPGHOME, hostname from config
+8. [2025-12-15] Migrated CachyOS host from standard Nix to Determinate Nix 3.14.0
+9. [2025-12-13] Simplified ISO to Ventoy-only boot (removed QEMU SquashFS support)
+10. [2025-12-12] Added `iso ventoy` action for QEMU testing with Ventoy + key injection
 
 
 ## Active Decisions
