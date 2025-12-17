@@ -3,7 +3,7 @@ let
   inherit (pkgs.stdenv.hostPlatform) system;
 
   pre-commit-check = inputs.git-hooks.lib.${system}.run {
-    src = self;
+    src = ./.;
     hooks = import ./githooks.nix { inherit pkgs; };
   };
 in

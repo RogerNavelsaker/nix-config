@@ -4,7 +4,6 @@
   nix-lib,
   config,
   modulesPath,
-  inputs,
   ...
 }:
 let
@@ -13,14 +12,12 @@ in
 {
   imports = (nix-lib.scanModules here) ++ [
     (modulesPath + "/installer/cd-dvd/installation-cd-minimal.nix")
-    # Determinate Nix module for FlakeHub integration
-    inputs.determinate.nixosModules.default
   ];
 
   # ISO image configuration
   image.baseName = lib.mkForce config.hostSpec.hostname;
 
-  # Use NetworkManager (Determinate ISO default)
+  # Use NetworkManager for network config
   networking.wireless.enable = lib.mkForce false;
   networking.networkmanager.enable = true;
 }

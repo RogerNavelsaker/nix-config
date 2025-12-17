@@ -1,11 +1,6 @@
 # hosts/iso/gpg-initrd.nix
 # GPG/Yubikey smartcard support in initrd for boot-time key decryption
-{
-  config,
-  lib,
-  pkgs,
-  ...
-}:
+{ pkgs, ... }:
 {
   # Enable GPG support in initrd (adds gpg, gpg-agent, scdaemon)
   boot.initrd.luks.gpgSupport = true;
@@ -19,7 +14,6 @@
     availableKernelModules = [
       "usbhid"
       "usb_storage"
-      "ccid" # Smartcard interface
     ];
 
     # Additional utilities for pass and smartcard operations
