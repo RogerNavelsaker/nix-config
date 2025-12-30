@@ -36,6 +36,7 @@ in
     deadnix
     statix
     nix-tree
+    nixd
   ];
 
   # Common commands available in all devshells
