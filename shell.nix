@@ -32,26 +32,10 @@ in
       Run 'menu' for complete command list with categories.
     '';
 
+    # Central provides: git, fd, rg, bat, eza, jq, nixfmt, deadnix, statix, nix-tree, nixd
     packages = with pkgs; [
-      # Nix CLI helper (better UX for rebuilds)
       nh
-
-      # Nix formatters and linters (used by git-hooks and manual commands)
-      nixfmt-rfc-style
-      deadnix
-      statix
-
-      # Nix analysis tools
-      nix-tree
       nix-diff
-
-      # Language servers
-      nixd
-
-      # Version control
-      git
-
-      # Build system
       gnumake
     ];
 
