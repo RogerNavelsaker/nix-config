@@ -6,11 +6,13 @@
     extra-substituters = [
       "https://cachix.cachix.org"
       "https://nix-community.cachix.org"
+      "https://numtide.cachix.org"
     ];
 
     extra-trusted-public-keys = [
       "cachix.cachix.org-1:eWNHQldwUO7G2VkjpnjDbWwy4KQ/HNxht7H4SSoMckM="
       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+      "numtide.cachix.org-1:2ps1kLBUWjxIneOy1Ik6cQjb41X0iXVXeHigGmycPPE="
     ];
   };
 
@@ -64,6 +66,11 @@
     git-hooks = {
       url = "github:cachix/git-hooks.nix";
       inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    llm-agents = {
+      url = "github:numtide/llm-agents.nix";
+      # Don't follow nixpkgs - use their pinned version for compatibility
     };
 
     # Private repo - use deploy key via custom hostname

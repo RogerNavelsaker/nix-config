@@ -10,8 +10,7 @@ tags:
 # Progress - nix-config
 
 ## Current Status
-GPG/Yubikey boot-time key unlock refactored. ISO uses load-keys.nix with mktemp for GNUPGHOME and hostname from config.hostSpec.hostname. Injection archive created by nix-keys, Ventoy disk assembled by nix-repos, QEMU testing in nix-repos.
-
+Layered devshell architecture implemented. Central devshells in nix-config/devshells/ provide base packages (git, fd, rg, bat, eza, jq, nixfmt, deadnix, statix, nix-tree, nixd). All repos use layered .envrc: GitHub flake first (--no-write-lock-file), then local flake. Sub-repos (nix-config, nix-keys, nix-secrets, nix-lib) cleaned of duplicate packages.
 
 ## What Works
 - [x] Flake with all inputs configured
@@ -27,7 +26,9 @@ GPG/Yubikey boot-time key unlock refactored. ISO uses load-keys.nix with mktemp 
 - [x] Patterns extracted to global memory
 - [x] GPG/Yubikey boot-time key unlock (load-keys.nix)
 - [x] Cross-repo architecture: nix-config (ISO) + nix-keys (injection) + nix-repos (Ventoy/QEMU)
-
+- [x] Centralized devshells in nix-config/devshells/
+- [x] Layered .envrc for all repos (GitHub base + local project)
+- [x] Duplicate packages removed from sub-repo shell.nix files
 
 ## What's Left
 

@@ -108,3 +108,30 @@ Key principles:
 - Hostname from `config.hostSpec.hostname`, not hardcoded
 - GNUPGHOME via `mktemp -d` for clean environment
 
+
+
+### Layered Devshell Pattern
+
+Cross-repo development environment composition:
+
+```
+.envrc (any repo)
+    │
+    ├── use flake "github:RogerNavelsaker/nix-config#<project>" --no-write-lock-file
+    │   └── Central base: git, fd, rg, bat, eza, jq, nixfmt, deadnix, statix, nix-tree, nixd
+    │
+    └── use flake (local)
+        └── Project-specific: language tools, build systems, custom commands
+
+nix-config/devshells/
+    │
+    ├── common.nix (shared base packages)
+    ├── default.nix (exports all devshells, mkProjectShell helper)
+    └── <project>.nix (per-project minimal shell)
+```
+
+Key principles:
+- GitHub flake cached by nix-direnv, no lock file pollution
+- Local flake merges with central base (environments compose)
+- Duplicates removed from local shell.nix (central provides base)
+- Projects without local flake use `--no-write-lock-file` only (nix-lib)
