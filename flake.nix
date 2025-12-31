@@ -73,6 +73,17 @@
       # Don't follow nixpkgs - use their pinned version for compatibility
     };
 
+    plasma-manager = {
+      url = "github:nix-community/plasma-manager";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.home-manager.follows = "home-manager";
+    };
+
+    autofirma-nix = {
+      url = "github:nix-community/autofirma-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # Private repo - use deploy key via custom hostname
     nix-secrets = {
       url = "git+ssh://git@github-nix-secrets/RogerNavelsaker/nix-secrets";
@@ -176,8 +187,14 @@
           stateVersion = "25.11";
           features = {
             opt-in = [
+              "autofirma"
+              "bitwarden"
               "claude-code"
+              "firefox"
               "goose"
+              "plasma"
+              "tailscale"
+              "yubikey"
             ];
           };
         };
