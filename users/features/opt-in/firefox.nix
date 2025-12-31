@@ -57,7 +57,7 @@
       isDefault = true;
 
       # Extensions (from NUR or nixpkgs)
-      extensions.packages = with pkgs.firefox-addons or [ ]; [
+      extensions.packages = [
         # Add extensions here when firefox-addons is available
         # ublock-origin
         # bitwarden
@@ -66,10 +66,10 @@
       # Search engines
       search = {
         force = true;
-        default = "DuckDuckGo";
+        default = "ddg";
         order = [
-          "DuckDuckGo"
-          "Google"
+          "ddg"
+          "google"
           "Nix Packages"
         ];
         engines = {
@@ -134,11 +134,11 @@
             icon = "${pkgs.nixos-icons}/share/icons/hicolor/scalable/apps/nix-snowflake.svg";
             definedAliases = [ "@hm" ];
           };
-          # Disable built-in engines
-          "Bing".metaData.hidden = true;
-          "Amazon.com".metaData.hidden = true;
-          "eBay".metaData.hidden = true;
-          "Wikipedia (en)".metaData.alias = "@wiki";
+          # Disable built-in engines (use id, not display name)
+          bing.metaData.hidden = true;
+          amazondotcom-us.metaData.hidden = true;
+          ebay.metaData.hidden = true;
+          wikipedia.metaData.alias = "@wiki";
         };
       };
 

@@ -38,5 +38,14 @@
     just # command runner
     tokei # code statistics
     hyperfine # benchmarking
+
+    # Container tools
+    lazydocker # Docker TUI
+
+    # Remote access
+    mosh # Mobile shell
+
+    # Diff tools
+    meld # Visual diff
   ];
 }

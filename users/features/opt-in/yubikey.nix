@@ -12,15 +12,6 @@
       yubico-piv-tool # PIV operations
     ];
 
-    # scdaemon config for YubiKey
-    file.".gnupg/scdaemon.conf".text = ''
-      # Use PC/SC daemon for smart card access
-      pcsc-driver ${pkgs.pcsclite}/lib/libpcsclite.so
-      card-timeout 5
-      # Disable internal CCID driver (use pcscd instead)
-      disable-ccid
-    '';
-
     # Ensure SSH uses GPG agent
     sessionVariables = {
       SSH_AUTH_SOCK = "$(gpgconf --list-dirs agent-ssh-socket)";
@@ -51,6 +42,12 @@
         list-options = "show-uid-validity";
         verify-options = "show-uid-validity";
       };
+      # scdaemon config for YubiKey
+      scdaemonSettings = {
+        pcsc-driver = "${pkgs.pcsclite}/lib/libpcsclite.so";
+        card-timeout = "5";
+        disable-ccid = true;
+      };
     };
 
     # Shell integration for GPG agent socket
@@ -71,7 +68,7 @@
     enableSshSupport = true;
     enableExtraSocket = true;
     # Qt pinentry for KDE Plasma
-    pinentryPackage = pkgs.pinentry-qt;
+    pinentry.package = pkgs.pinentry-qt;
     # Cache settings (8 hours default, 24 hours max)
     defaultCacheTtl = 28800;
     maxCacheTtl = 86400;

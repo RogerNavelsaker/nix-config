@@ -188,12 +188,16 @@
           features = {
             opt-in = [
               "autofirma"
+              "beeper"
               "bitwarden"
               "claude-code"
               "firefox"
               "goose"
               "plasma"
               "tailscale"
+              "terminals"
+              "vscode"
+              "yazi"
               "yubikey"
             ];
           };
