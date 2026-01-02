@@ -202,6 +202,7 @@
               "plasma"
               "tailscale"
               "terminals"
+              "theming" # GTK/Qt theme management
               "vscode"
               "yazi"
               "yubikey"

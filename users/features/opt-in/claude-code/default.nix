@@ -23,4 +23,25 @@ in
   home.file = lib.mapAttrs' (
     name: _: lib.nameValuePair ".claude/hooks/${name}" { executable = true; }
   ) hooks;
+
+  # Weekly ACE curation timer - runs every Sunday at 09:00
+  systemd.user.services.ace-weekly-curation = {
+    Unit = {
+      Description = "ACE Weekly Curation Check";
+      After = [ "graphical-session.target" ];
+    };
+    Service = {
+      Type = "oneshot";
+      ExecStart = "${config.home.homeDirectory}/.claude/hooks/weekly-curation.fish";
+    };
+  };
+
+  systemd.user.timers.ace-weekly-curation = {
+    Unit.Description = "Weekly ACE curation reminder";
+    Timer = {
+      OnCalendar = "Sun 09:00";
+      Persistent = true;
+    };
+    Install.WantedBy = [ "timers.target" ];
+  };
 }

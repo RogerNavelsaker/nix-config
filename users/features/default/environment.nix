@@ -63,4 +63,7 @@ in
     --max-columns=200
     --max-columns-preview
   '';
+
+  # Enable fontconfig for Nix apps to find system fonts
+  fonts.fontconfig.enable = true;
 }

@@ -46,16 +46,23 @@ let
   # Wrapper that runs GL apps through nixGL driver(s)
   # Chains Vulkan + OpenGL wrappers when both are configured
   # Preserves pname/version for home-manager module compatibility
+  # Optional extraEnv for app-specific environment variables
   wrapGL =
     pkg:
+    {
+      extraEnv ? { },
+      noVulkan ? false,
+    }:
     let
-      # Chain: vulkan wrapper -> GL wrapper -> app (if vulkan set)
+      # Build env var exports from extraEnv attrset
+      envExports = lib.concatStringsSep "\n" (
+        lib.mapAttrsToList (name: value: "export ${name}=${lib.escapeShellArg value}") extraEnv
+      );
+      # Chain: vulkan wrapper -> GL wrapper -> app (if vulkan set and not disabled)
       # Otherwise: GL wrapper -> app
+      useVulkan = cfg.vulkan != null && !noVulkan;
       execCmd =
-        if cfg.vulkan != null then
-          "exec ${vulkanBin} ${glBin} $bin \"\\$@\""
-        else
-          "exec ${glBin} $bin \"\\$@\"";
+        if useVulkan then "exec ${vulkanBin} ${glBin} $bin \"\\$@\"" else "exec ${glBin} $bin \"\\$@\"";
     in
     pkgs.runCommand "${pkg.name}-nixgl"
       {
@@ -72,6 +79,7 @@ let
           name=$(basename $bin)
           cat > $out/bin/$name << EOF
         #!${pkgs.bash}/bin/bash
+        ${envExports}
         ${execCmd}
         EOF
           chmod +x $out/bin/$name
@@ -182,20 +190,25 @@ in
       ++ lib.optionals (cfg.enable && cfg.vulkan != null) [
         vulkanPackages.${cfg.vulkan}
       ]
-      ++ lib.optionals (cfg.enable && cfg.wrapBeeper) [ (wrapGL pkgs.beeper) ]
-      ++ lib.optionals (cfg.enable && cfg.wrapYubioath) [ (wrapGL pkgs.yubioath-flutter) ]
-      ++ lib.optionals (cfg.enable && cfg.wrapBitwarden) [ (wrapGL pkgs.bitwarden-desktop) ];
+      ++ lib.optionals (cfg.enable && cfg.wrapBeeper) [
+        (wrapGL pkgs.beeper {
+          # Skip Vulkan - causes issues with Wayland
+          noVulkan = true;
+        })
+      ]
+      ++ lib.optionals (cfg.enable && cfg.wrapYubioath) [ (wrapGL pkgs.yubioath-flutter { }) ]
+      ++ lib.optionals (cfg.enable && cfg.wrapBitwarden) [ (wrapGL pkgs.bitwarden-desktop { }) ];
 
     # Override programs.* packages with wrapped versions
     programs = {
       alacritty.package = lib.mkIf (cfg.enable && config.programs.alacritty.enable) (
-        lib.mkForce (wrapGL pkgs.alacritty)
+        lib.mkForce (wrapGL pkgs.alacritty { })
       );
       kitty.package = lib.mkIf (cfg.enable && config.programs.kitty.enable) (
-        lib.mkForce (wrapGL pkgs.kitty)
+        lib.mkForce (wrapGL pkgs.kitty { })
       );
       vscode.package = lib.mkIf (cfg.enable && config.programs.vscode.enable) (
-        lib.mkForce (wrapGL pkgs.vscode)
+        lib.mkForce (wrapGL pkgs.vscode { })
       );
     };
   };
