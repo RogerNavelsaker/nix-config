@@ -9,4 +9,10 @@
 #
 _: {
   # AIO-specific config only (features handled by mkHome)
+
+  # Use Mesa drivers for AMD GPU
+  # nixGLIntel = Mesa OpenGL (Intel/AMD/Nouveau)
+  # nixVulkanIntel = Mesa Vulkan (Intel/AMD)
+  nixgl.driver = "nixGLIntel";
+  nixgl.vulkan = "nixVulkanIntel";
 }

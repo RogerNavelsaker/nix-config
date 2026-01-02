@@ -2,12 +2,14 @@
 #
 # Visual Studio Code with declarative configuration
 # Extensions managed via nixpkgs where available, mutable for marketplace-only
+# For non-NixOS: also enable nixgl feature for GPU acceleration
 #
-{ pkgs, ... }:
+{ pkgs, lib, ... }:
 {
   programs.vscode = {
     enable = true;
-    package = pkgs.vscode;
+    # Default package; nixgl feature overrides this with mkForce
+    package = lib.mkDefault pkgs.vscode;
 
     # Allow manual extension installation for marketplace-only extensions
     mutableExtensionsDir = true;
