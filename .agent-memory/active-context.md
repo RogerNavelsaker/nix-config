@@ -10,33 +10,42 @@ tags:
 # Active Context - nix-config
 
 ## Current Focus
-Layered devshell architecture complete across all repos.
+Desktop environment opt-in features for Arch Linux (rona@aio).
 
 ## Recent Events
-1. [2025-12-30] Applied layered devshell to nix-repos sub-repos (nix-config, nix-keys, nix-secrets, nix-lib)
-2. [2025-12-30] Removed duplicate packages from local shell.nix files (git, jq, nixfmt, etc.)
-3. [2025-12-30] Central devshell provides: git, fd, rg, bat, eza, jq, nixfmt, deadnix, statix, nix-tree, nixd
-4. [2025-12-17] Added home-manager config for rona@aio (Arch Linux host)
-5. [2025-12-17] Switched from Determinate Nix to standard Nix 2.33.0
-6. [2025-12-17] Updated nix-secrets to use deploy key URL (github-nix-secrets)
-7. [2025-12-17] Refactored GPG/Yubikey boot-time key unlock architecture
-8. [2025-12-17] Split injection archive creation to nix-keys, Ventoy disk to nix-repos
-9. [2025-12-15] Migrated CachyOS host from standard Nix to Determinate Nix 3.14.0
-10. [2025-12-13] Simplified ISO to Ventoy-only boot (removed QEMU SquashFS support)
-
+1. [2026-01-03] Added GTK/Qt theming module with Catppuccin Mocha theme
+2. [2026-01-03] Fixed plasma-manager import: homeManagerModules → homeModules
+3. [2026-01-03] Added desktop opt-in features: plasma, firefox, yubikey, autofirma, bitwarden, tailscale
+4. [2026-01-03] Firefox: declarative config with PKCS#11, privacy settings, custom search engines (@np, @no, @hm)
+5. [2026-01-03] Yubikey: GPG agent with SSH support, scdaemonSettings, yubioath-flutter GUI
+6. [2026-01-03] Autofirma: Spanish e-signing with Firefox profile integration
+7. [2026-01-03] Added nixGL feature for non-NixOS hosts with GPU driver options
+8. [2026-01-03] Wrapped GL apps: alacritty, kitty, vscode, beeper, bitwarden, yubioath-flutter
+9. [2026-01-03] nixgl.driver (OpenGL) + nixgl.vulkan (Vulkan) options with chained wrapper
+10. [2026-01-03] Desktop file patching for absolute paths in wrapped packages
 ## Active Decisions
 
 - Using NixOS 25.11 stable branch
 - Feature opt-in/opt-out pattern for host customization
 - Pre-commit hooks via git-hooks.nix
 - Shared library in nix-lib (accessed via lib.nix-lib.*)
+- nixGL wrapping for Electron/GPU apps on non-NixOS
+- plasma-manager.homeModules (not homeManagerModules)
+- Firefox profile path must match autofirma firefoxIntegration
 
 ## Next Steps
-- Push layered devshell changes to all sub-repos
-- Test layered .envrc in nix-config, nix-keys, nix-secrets, nix-lib
-- Document central devshell packages in nix-config README
+- Test home-manager switch on aio with all new features
+- Verify autofirma Firefox integration works with YubiKey certs
+- Document nixGL driver options in README
 
 ## Relations
 
 - part_of [[nix-config]]
 - uses_lib_from [[nix-lib]]
+
+## 2026-01-03: ACE Weekly Curation Timer
+
+Added systemd user timer for weekly ACE curation in `users/features/opt-in/claude-code/default.nix`:
+- `ace-weekly-curation.service`: Oneshot service executing `~/.claude/hooks/weekly-curation.fish`
+- `ace-weekly-curation.timer`: Fires every Sunday at 09:00, persistent to catch up on missed runs
+- Depends on `graphical-session.target` for desktop notifications via `notify-send`
