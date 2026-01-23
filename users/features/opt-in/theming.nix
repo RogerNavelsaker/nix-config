@@ -3,7 +3,19 @@
 # GTK and Qt theming for consistent appearance across Nix and system apps
 # Mirrors current KDE Plasma settings
 #
-{ pkgs, ... }:
+# On non-NixOS (detected by nixgl feature), Qt theming is disabled to avoid
+# Nix KDE binaries conflicting with system Plasma installation.
+#
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
+let
+  # nixgl feature indicates non-NixOS system (e.g., Arch, CachyOS)
+  isNonNixOS = lib.elem "nixgl" config.userSpec.enabledFeatures;
+in
 {
   # GTK configuration
   gtk = {
@@ -63,8 +75,10 @@
     };
   };
 
-  # Qt configuration - follow GTK theme
-  qt = {
+  # Qt configuration
+  # On NixOS: use kde platformTheme for proper integration
+  # On non-NixOS: disable to avoid Nix KDE binaries conflicting with system Plasma
+  qt = lib.mkIf (!isNonNixOS) {
     enable = true;
     platformTheme.name = "kde";
     style = {

@@ -89,6 +89,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    nix-vscode-extensions = {
+      url = "github:nix-community/nix-vscode-extensions";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # Private repo - use deploy key via custom hostname
     nix-secrets = {
       url = "git+ssh://git@github-nix-secrets/RogerNavelsaker/nix-secrets";

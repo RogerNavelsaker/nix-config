@@ -1,7 +1,7 @@
 # users/features/opt-in/vscode.nix
 #
 # Visual Studio Code with declarative configuration
-# Extensions managed via nixpkgs where available, mutable for marketplace-only
+# All extensions from nix-vscode-extensions (daily updated from marketplace)
 # For non-NixOS: also enable nixgl feature for GPU acceleration
 #
 { pkgs, lib, ... }:
@@ -11,39 +11,85 @@
     # Default package; nixgl feature overrides this with mkForce
     package = lib.mkDefault pkgs.vscode;
 
-    # Allow manual extension installation for marketplace-only extensions
-    mutableExtensionsDir = true;
+    # Fully declarative - no mutable extensions needed with nix-vscode-extensions
+    mutableExtensionsDir = false;
 
     # Profile-based configuration (HM 25.05+)
     profiles.default = {
-      # Extensions available in nixpkgs
-      extensions = with pkgs.vscode-extensions; [
+      extensions = with pkgs.vscode-marketplace; [
         # Nix
+        arrterian.nix-env-selector
+        bbenoist.nix
         jnoortheen.nix-ide
         mkhl.direnv
+        pinage404.nix-extension-pack
 
         # Git
+        donjayamanne.githistory
         eamodio.gitlens
-        github.vscode-pull-request-github
+        github.remotehub
         github.vscode-github-actions
+        github.vscode-pull-request-github
+        mhutchie.git-graph
+        ms-vscode.azure-repos
+        ms-vscode.remote-repositories
+        rubbersheep.gi
+        vivaxy.vscode-conventional-commits
+        waderyan.gitblame
 
         # AI Assistants
         anthropic.claude-code
+        block.vscode-goose
         github.copilot
         github.copilot-chat
+        saoudrizwan.claude-dev
 
         # Editor utilities
+        aaron-bond.better-comments
         alefragnani.bookmarks
         alefragnani.project-manager
-        usernamehw.errorlens
+        britesnow.vscode-toggle-quotes
+        chouzz.vscode-better-align
         editorconfig.editorconfig
+        formulahendry.auto-close-tag
+        formulahendry.auto-complete-tag
+        formulahendry.auto-rename-tag
+        gruntfuggly.todo-tree
+        hoovercj.vscode-settings-cycler
+        inu1255.easy-snippet
+        jgclark.vscode-todo-highlight
+        johnpapa.vscode-peacock
+        lacroixdavid1.vscode-format-context-menu
+        naumovs.color-highlight
+        oderwat.indent-rainbow
+        qcz.text-power-tools
+        ryu1kn.partial-diff
+        ryu1kn.text-marker
+        slevesque.vscode-multiclip
+        usernamehw.errorlens
 
         # File formats
-        redhat.vscode-yaml
+        mikestead.dotenv
+        nefrob.vscode-just-syntax
         redhat.vscode-xml
+        redhat.vscode-yaml
+        tomoki1207.pdf
+
+        # Tools
+        adpyke.codesnap
+        christian-kohler.path-intellisense
+        ibm.output-colorizer
+        signageos.signageos-vscode-sops
+
+        # Themes
+        yummygum.city-lights-icon-vsc
+        yummygum.city-lights-theme
       ];
 
       userSettings = {
+        # Extensions - disable auto-update for Nix-managed extensions
+        "extensions.autoUpdate" = false;
+
         # Telemetry
         "amazonQ.telemetry" = false;
         "redhat.telemetry.enabled" = false;

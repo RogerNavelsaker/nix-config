@@ -36,6 +36,9 @@ let
         pogPkgs.pog or (throw "pog package not available for system ${final.stdenv.hostPlatform.system}");
     };
 
+  # VSCode extensions from marketplace (daily updated)
+  vscode-extensions-overlay = inputs.nix-vscode-extensions.overlays.default;
+
   additions =
     final: _prev:
     import ../pkgs {
@@ -60,6 +63,7 @@ in
     master-packages
     flake-inputs
     pog-overlay
+    vscode-extensions-overlay
     additions
     modifications
     ;
@@ -71,6 +75,7 @@ in
     // (master-packages final prev)
     // (flake-inputs final prev)
     // (pog-overlay final prev)
+    // (vscode-extensions-overlay final prev)
     // (additions final prev)
     // (modifications final prev);
 }
