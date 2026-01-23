@@ -23,8 +23,8 @@ mkProjectShell {
     ╚════════════════════════════════════════════╝
 
     Quick Commands:
-      os switch             Build & switch NixOS (current host)
-      hm switch             Build & switch Home Manager
+      os switch [host]      Build & switch NixOS
+      hm switch [user@host] Build & switch Home Manager
       check                 Run all flake checks
       menu                  Show all commands
   '';
@@ -40,14 +40,30 @@ mkProjectShell {
     {
       name = "os";
       category = "system";
-      help = "NixOS operations: os switch|boot|test|build [-H hostname]";
-      command = ''nh os "$@"'';
+      help = "NixOS: os switch [hostname] | os boot [hostname] | os test [hostname]";
+      command = ''
+        local action="$1"
+        shift
+        if [[ -n "$1" && "$1" != -* ]]; then
+          nh os "$action" -H "$1" "''${@:2}"
+        else
+          nh os "$action" "$@"
+        fi
+      '';
     }
     {
       name = "hm";
       category = "system";
-      help = "Home Manager operations: hm switch|build [-c user@host]";
-      command = ''nh home "$@"'';
+      help = "Home Manager: hm switch [user@host] | hm build [user@host]";
+      command = ''
+        local action="$1"
+        shift
+        if [[ -n "$1" && "$1" != -* ]]; then
+          nh home "$action" -c "$1" "''${@:2}"
+        else
+          nh home "$action" "$@"
+        fi
+      '';
     }
     {
       name = "clean";

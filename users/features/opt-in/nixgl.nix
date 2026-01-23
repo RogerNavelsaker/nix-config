@@ -109,6 +109,11 @@ let
             fi
           done
         fi
+
+        # Symlink lib directory (needed for VSCode resources, themes, etc.)
+        if [ -d "${pkg}/lib" ]; then
+          ln -s "${pkg}/lib" "$out/lib"
+        fi
       '';
 
   cfg = config.nixgl;

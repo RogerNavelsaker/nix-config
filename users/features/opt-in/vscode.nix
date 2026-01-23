@@ -6,6 +6,8 @@
 #
 { pkgs, lib, ... }:
 {
+  # nixd LSP for Nix language support
+  home.packages = [ pkgs.nixd ];
   programs.vscode = {
     enable = true;
     # Default package; nixgl feature overrides this with mkForce
@@ -40,8 +42,6 @@
         # AI Assistants
         anthropic.claude-code
         block.vscode-goose
-        github.copilot
-        github.copilot-chat
         saoudrizwan.claude-dev
 
         # Editor utilities
@@ -91,9 +91,25 @@
         "extensions.autoUpdate" = false;
 
         # Telemetry
-        "amazonQ.telemetry" = false;
         "redhat.telemetry.enabled" = false;
-        "chat.disableAIFeatures" = true;
+        "chat.commandCenter.enabled" = false;
+        "github.copilot.enable" = {
+          "*" = false;
+        };
+        "github.copilot.chat.enabled" = false;
+
+        # Nix LSP (nixd)
+        "nix.enableLanguageServer" = true;
+        "nix.serverPath" = "nixd";
+        "nix.serverSettings" = {
+          nixd = {
+            formatting.command = [ "nixfmt" ];
+            options = {
+              nixos.expr = ''(builtins.getFlake "/home/rona/Repositories/nix-repos/nix-config").nixosConfigurations.aio.options'';
+              home-manager.expr = ''(builtins.getFlake "/home/rona/Repositories/nix-repos/nix-config").homeConfigurations."rona@aio".options'';
+            };
+          };
+        };
 
         # Editor
         "workbench.startupEditor" = "none";
@@ -112,34 +128,8 @@
         "GitHooks.hooksDirectory" = ".githooks";
         "GitHooks.logLevel" = "error";
 
-        # GitLens
-        "gitlens.ai.model" = "vscode";
-        "gitlens.ai.vscode.model" = "copilot:gpt-4.1";
-
         # Claude Code
         "claudeCode.preferredLocation" = "sidebar";
-
-        # Copilot - disable most features
-        "github.copilot.chat.agent.currentEditorContext.enabled" = false;
-        "github.copilot.chat.codeGeneration.useInstructionFiles" = false;
-        "github.copilot.chat.copilotDebugCommand.enabled" = false;
-        "github.copilot.chat.customInstructionsInSystemMessage" = false;
-        "github.copilot.chat.edits.suggestRelatedFilesForTests" = false;
-        "github.copilot.chat.edits.suggestRelatedFilesFromGitHistory" = false;
-        "github.copilot.chat.imageUpload.enabled" = false;
-        "github.copilot.chat.newWorkspaceCreation.enabled" = false;
-        "github.copilot.chat.reviewAgent.enabled" = false;
-        "github.copilot.chat.reviewSelection.enabled" = false;
-        "github.copilot.chat.setupTests.enabled" = false;
-        "github.copilot.chat.summarizeAgentConversationHistory.enabled" = false;
-        "github.copilot.chat.useResponsesApi" = false;
-        "github.copilot.chat.useProjectTemplates" = false;
-        "github.copilot.editor.enableCodeActions" = false;
-        "github.copilot.nextEditSuggestions.allowWhitespaceOnlyChanges" = false;
-        "github.copilot.nextEditSuggestions.fixes" = false;
-        "github.copilot.renameSuggestions.triggerAutomatically" = false;
-        "githubPullRequests.experimental.chat" = false;
-        "githubPullRequests.codingAgent.enabled" = false;
 
         # SOPS
         "sops.creationEnabled" = true;
