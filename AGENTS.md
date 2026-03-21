@@ -36,7 +36,7 @@ nix-config/
 - **comin**: Continuous machine integration
 - **devshell**: Development environment
 - **git-hooks**: Pre-commit hooks
-- **nixos-secrets**: Private secrets repository (SSH)
+- **nixos-secrets**: SOPS-encrypted secrets repository
 
 ## Hosts
 
@@ -48,8 +48,8 @@ nix-config/
 ## Development
 
 ```bash
-nix develop              # Enter development shell
-direnv allow             # Or use direnv
+direnv allow             # Preferred: Flox + direnv
+nix develop              # Fallback: flake devshell
 ```
 
 ## Build Commands
@@ -65,15 +65,15 @@ nixos-rebuild build --flake .#nanoserver
 nix flake check
 ```
 
-## Protected Repository
+## Repository Policy
 
-**Main branch is PROTECTED.** Use feature branches and PRs.
+The repository may be updated directly when appropriate.
 
 ## Related Repositories
 
 - `nix-lib`: Shared library for NixOS/Home Manager builders
-- `nix-secrets`: SOPS-encrypted secrets (git+ssh)
-- `nix-keys`: Local-only key management (NEVER push)
+- `nix-secrets`: SOPS-encrypted secrets
+- `nix-keys`: Yubikey-backed encrypted key material
 
 ## Conventions
 

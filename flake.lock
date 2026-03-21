@@ -427,17 +427,17 @@
     "nix-secrets": {
       "flake": false,
       "locked": {
-        "lastModified": 1765924029,
-        "narHash": "sha256-E0ZvtRXndMyYHhjv2JXIdyQRx4kjrVkd4JYCK73t9Qk=",
-        "ref": "refs/heads/main",
-        "rev": "295a9eea9acd8b0bb7e83075bdbf3cf47cfa5f95",
-        "revCount": 12,
-        "type": "git",
-        "url": "ssh://git@github-nix-secrets/RogerNavelsaker/nix-secrets"
+        "lastModified": 1774126825,
+        "narHash": "sha256-yR6P/VJ0T1vNPvNkDnCoFK8486YpjsXbMnaPPCmHNXM=",
+        "owner": "RogerNavelsaker",
+        "repo": "nix-secrets",
+        "rev": "cd124c5b75059f63a0b2f5b3175d72b18629b603",
+        "type": "github"
       },
       "original": {
-        "type": "git",
-        "url": "ssh://git@github-nix-secrets/RogerNavelsaker/nix-secrets"
+        "owner": "RogerNavelsaker",
+        "repo": "nix-secrets",
+        "type": "github"
       }
     },
     "nix-unit": {

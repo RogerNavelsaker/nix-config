@@ -94,9 +94,8 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # Private repo - use deploy key via custom hostname
     nix-secrets = {
-      url = "git+ssh://git@github-nix-secrets/RogerNavelsaker/nix-secrets";
+      url = "github:RogerNavelsaker/nix-secrets";
       flake = false;
     };
   };
