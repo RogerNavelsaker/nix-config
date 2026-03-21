@@ -1,0 +1,46 @@
+schema-version = "1.10.0"
+
+[install]
+git.pkg-path = "git"
+gh.pkg-path = "gh"
+direnv.pkg-path = "direnv"
+jq.pkg-path = "jq"
+ripgrep.pkg-path = "ripgrep"
+fd.pkg-path = "fd"
+bat.pkg-path = "bat"
+eza.pkg-path = "eza"
+nix.pkg-path = "nix"
+nixd.pkg-path = "nixd"
+nixfmt-rfc-style.pkg-path = "nixfmt-rfc-style"
+deadnix.pkg-path = "deadnix"
+statix.pkg-path = "statix"
+nix-tree.pkg-path = "nix-tree"
+nh.pkg-path = "nh"
+nix-diff.pkg-path = "nix-diff"
+gnumake.pkg-path = "gnumake"
+
+[vars]
+WORKSPACE_REPO = "nix-config"
+
+[hook]
+on-activate = '''
+  export NH_FLAKE="$FLOX_ENV_PROJECT"
+'''
+
+[profile]
+common = """
+  alias os='nh os'
+  alias hm='nh home'
+  alias clean='nh clean'
+  alias search='nh search'
+  alias check='nix flake check'
+  alias fmt='nixfmt .'
+  alias lint-deadcode='deadnix .'
+  alias lint-patterns='statix check .'
+  alias lint-patterns-fix='statix fix .'
+  alias show='nix flake show'
+  alias update='nix flake update'
+"""
+
+[options]
+systems = ["x86_64-linux"]
