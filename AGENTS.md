@@ -62,7 +62,7 @@ nix build .#nixosConfigurations.iso.config.system.build.isoImage
 nixos-rebuild build --flake .#nanoserver
 
 # Check flake
-nix flake check
+nix flake check --option eval-cache false
 ```
 
 ## Repository Policy

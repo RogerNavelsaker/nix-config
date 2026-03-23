@@ -7,17 +7,17 @@
   ...
 }:
 {
-  imports = [ inputs.impermanence.nixosModules.home-manager.impermanence ];
+  imports = [ inputs.impermanence.homeManagerModules.impermanence ];
 
-  # Configure home persistence - individual users should extend this with their needs
-  home.persistence."/persist/${config.home.homeDirectory}" = {
+  # Configure home persistence for the v1 standalone Home Manager module.
+  home.persistence."/persist${config.home.homeDirectory}" = {
     # Essential files to persist across reboots
     files = [ ];
 
     # Essential directories to persist
     directories = [ ];
 
-    # Allow other users to use this persistence (needed for some service integrations)
+    # Allow other users to access bindfs-mounted files.
     allowOther = true;
   };
 }
