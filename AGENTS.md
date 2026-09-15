@@ -1,97 +1,36 @@
 # nix-config
 
-NixOS system configuration flake for personal infrastructure.
+## Project
 
-## Repository Structure
+This repository is a Nix flake for personal NixOS and Home Manager configuration. It defines two NixOS systems (`nanoserver` and an installation `iso`) plus Home Manager configurations for `rona`. Inputs include nixpkgs, Home Manager, sops-nix, impermanence, disko, and related tooling. There is currently no `README.md`; the `docs/` directory contains focused guides such as `ISO.md` and `IMPERMANENCE.md`.
 
-```
-nix-config/
-├── flake.nix          # Main flake with inputs and outputs
-├── flake.lock         # Pinned dependency versions
-├── lib/               # Extended nix library functions
-├── hosts/             # Host-specific configurations
-│   ├── features/      # Opt-in/opt-out feature modules
-│   ├── iso/           # ISO image configuration
-│   └── nanoserver/    # Server configuration
-├── users/             # User (Home Manager) configurations
-├── modules/           # Reusable NixOS and HM modules
-│   ├── nixos/         # NixOS modules
-│   └── home-manager/  # Home Manager modules
-├── overlays/          # Nixpkgs overlays
-├── pkgs/              # Custom packages
-├── scripts/           # Helper scripts
-├── docs/              # Documentation
-├── checks.nix         # Flake checks
-├── shell.nix          # Development shell
-└── githooks.nix       # Git hooks configuration
-```
+## Layout
 
-## Key Inputs
-
-- **nixpkgs**: NixOS 25.11 (stable)
-- **home-manager**: release-25.11
-- **sops-nix**: Secret management
-- **impermanence**: Ephemeral root support
-- **disko**: Declarative disk partitioning
-- **comin**: Continuous machine integration
-- **devshell**: Development environment
-- **git-hooks**: Pre-commit hooks
-- **nixos-secrets**: SOPS-encrypted secrets repository
-
-## Hosts
-
-| Host | Purpose | Features |
-|------|---------|----------|
-| `nanoserver` | Main server | Base configuration |
-| `iso` | Installation ISO | WiFi, secrets |
+- `flake.nix`, `flake.lock`: flake inputs and outputs, systems, homes, packages, checks, and formatter.
+- `hosts/`: host modules; `iso/` builds the installer image and `nanoserver/` configures the server.
+- `users/`: per-user Home Manager configurations and default/opt-in/opt-out features.
+- `modules/`: reusable NixOS and Home Manager module entry points.
+- `devshells/`: development shells and commands; `shell.nix` is the shell entry point.
+- `overlays/`, `pkgs/`, `scripts/`: overlays, custom Nix packages, and helper scripts.
+- `docs/`: operational documentation; `checks.nix` defines flake checks and `githooks.nix` defines formatting/lint hooks.
 
 ## Development
 
-```bash
-direnv allow             # Preferred: Flox + direnv
-nix develop              # Fallback: flake devshell
-```
+Enter the project environment with `nix develop` (or `direnv allow` where the surrounding workspace environment is available). The dev shell provides commands including `check`, `fmt`, `lint-deadcode`, and `lint-patterns`.
 
-## Build Commands
+Run the quality gate before submitting changes:
 
 ```bash
-# Build ISO
-nix build .#nixosConfigurations.iso.config.system.build.isoImage
-
-# Build system
-nixos-rebuild build --flake .#nanoserver
-
-# Check flake
 nix flake check --option eval-cache false
 ```
 
-## Repository Policy
+Useful targeted commands:
 
-The repository may be updated directly when appropriate.
+```bash
+nix build .#nixosConfigurations.iso.config.system.build.isoImage
+nixos-rebuild build --flake .#nanoserver
+nix fmt -- --check
+nix flake show
+```
 
-## Related Repositories
-
-- `nix-lib`: Shared library for NixOS/Home Manager builders
-- `nix-secrets`: SOPS-encrypted secrets
-- `nix-keys`: Yubikey-backed encrypted key material
-
-## Conventions
-
-- Nix code follows nixfmt-rfc-style
-- Pre-commit hooks enforce formatting
-- Features use opt-in/opt-out pattern
-- Secrets managed via sops-nix
-
-## Recommended MCP Servers
-
-This is a Nix repository. For AI assistants with MCP support:
-
-**Project-specific** (configure in `.mcp.json`):
-- `nixos` - NixOS/Home Manager/nix-darwin option lookups via `uvx mcp-nixos`
-
-**Global** (user's global config):
-- `basic-memory` - Knowledge management
-- `modern-cli` - Modern CLI tools, fetch, github
-- `sequentialthinking` - Complex reasoning
-
-`.mcp.json` is gitignored - each user configures their own.
+The flake checks cover NixOS and Home Manager evaluations, formatting, dead-code and pattern linting, syntax, and feature structure. Avoid committing generated files or secrets; keep changes focused and run the gate again after the final edit.
