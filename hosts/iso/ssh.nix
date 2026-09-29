@@ -5,10 +5,17 @@
   # Key loading logic is handled in load-keys.nix
   services.openssh = {
     enable = true;
-    settings.PermitRootLogin = "yes";
-    # Allow default key generation for sops-nix compatibility
-    # Keys from Ventoy/QEMU will overwrite these if found
+    settings = {
+      PermitRootLogin = "no";
+      PasswordAuthentication = false;
+      KbdInteractiveAuthentication = false;
+      AuthorizedKeysFile = "/home/rona/.ssh/authorized_keys";
+    };
   };
 
-  systemd.services.sshd.wantedBy = lib.mkForce [ "multi-user.target" ];
+  systemd.services.sshd = {
+    wantedBy = lib.mkForce [ "multi-user.target" ];
+    requires = [ "sops-install-secrets.service" ];
+    after = [ "sops-install-secrets.service" ];
+  };
 }

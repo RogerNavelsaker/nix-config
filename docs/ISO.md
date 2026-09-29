@@ -6,8 +6,9 @@ Minimal NixOS installation ISO with Ventoy boot and SSH key injection.
 
 - **Pure Nix build** - No `--impure` flag required
 - **UEFI bootable** - Works with modern UEFI systems
-- **Ventoy boot** - Keys injected automatically during boot
-- **Persistent SSH keys** - Load keys from nix-keys repository
+- **Ventoy boot** - Encrypted nix-keys material is unlocked at boot with the YubiKey
+- **Ephemeral rescue access** - The SOPS decryption SSH key is held under `/run` and removed after secret activation; Tailscale state is memory-only
+- **Key-only SSH** - Root and password SSH are disabled; the operator public key is loaded from Ventoy media
 
 ## Quick Start
 
@@ -15,8 +16,8 @@ Minimal NixOS installation ISO with Ventoy boot and SSH key injection.
 # Enter development shell
 nix develop
 
-# Build ISO + Ventoy disk (requires Yubikey)
-iso build
+# Build ISO + Ventoy disk with the operator public key (YubiKey required at boot)
+iso build -U rona
 
 # Run in QEMU
 iso run
@@ -59,27 +60,26 @@ Ventoy partition:
 
 ### Injected Key Structure
 
-Ventoy extracts `keys.tar.gz` into the initramfs during boot:
+The Ventoy archive contains encrypted private material and explicitly selected public keys:
 
 ```
-etc/ssh/
-├── ssh_host_ed25519_key      # Host private key
-└── ssh_host_ed25519_key.pub  # Host public key
-root/.ssh/
-├── deploy_key_ed25519        # Deploy private key
-└── deploy_key_ed25519.pub    # Deploy public key
-users/<user>/.ssh/
-├── id_ed25519                # User private key
-└── id_ed25519.pub            # User public key
+private/
+├── .gpg-id
+└── hosts/iso/*.gpg           # Encrypted host key material
+public/
+├── hosts/iso/*.pub
+└── users/rona/id_ed25519.pub # Public operator key, when selected
 ```
+
+At boot, only the host key needed for SOPS decryption is decrypted into `/run/rescue`. The operator public key is copied to `/home/rona/.ssh/authorized_keys`; deploy and user private keys are not installed on the rescue system.
 
 ### Build Options
 
 ```bash
-# Host keys only (default)
+# Host key only; remote SSH stays unavailable without an operator key
 iso build
 
-# Include specific user keys
+# Include the operator key needed for remote SSH
 iso build -U rona
 
 # Use different host's keys
@@ -95,23 +95,24 @@ iso build --keys-repo /path/to/nix-keys
 2. Ventoy bootloader loads `nixos.iso`
 3. Ventoy injects `keys.tar.gz` contents into initramfs
 4. NixOS initramfs (stage 1) runs `postMountCommands`
-5. `load-keys` utility copies keys from `/` to `$targetRoot`
-6. System boots with SSH keys in place
-7. sops-nix decrypts secrets using host key
+5. The host SSH key is decrypted only into `/run/rescue` for SOPS age decryption
+6. sops-nix activates secrets and removes the temporary decryption key
+7. SSH starts only after SOPS activation; inbound access is limited to the operator public key from Ventoy
+8. Tailscale starts after networking and SOPS, uses a hashed runtime hostname and `tag:rescue`, then removes its auth-key file
 
 ### Why Stage 1?
 
-- Keys available before system services start
-- Works with sops-nix (needs host keys for decryption)
-- SSH service starts with proper keys immediately
-- No timing issues or race conditions
+- Only the temporary SOPS decryption key is made available before stage 2
+- Missing YubiKey/decryption prevents SOPS activation and therefore prevents SSH/Tailscale startup
+- No deploy or user private SSH keys are copied into the rescue root
+- QEMU/hardware boot behavior still needs verification; this documentation describes the intended current flow
 
 ## Configuration Files
 
 | File | Purpose |
 |------|---------|
 | `default.nix` | Main ISO configuration |
-| `load-keys.nix` | Ventoy key injection handling |
+| `load-keys.nix` | Initrd YubiKey unlock and ephemeral key handling |
 | `ssh.nix` | SSH service configuration |
 | `boot.nix` | Boot configuration |
 | `network.nix` | Network configuration |
@@ -119,21 +120,13 @@ iso build --keys-repo /path/to/nix-keys
 | `programs.nix` | Additional programs |
 | `tailscale.nix` | Tailscale VPN setup |
 
-## load-keys Utility
+## Rescue access safety
 
-The `load-keys` utility (`pkgs/load-keys.nix`) handles SSH key copying:
-
-```bash
-load-keys <source_dir> [target_root]
-
-# Ventoy initramfs usage:
-load-keys / $targetRoot
-```
-
-Automatically detects and loads:
-- SSH host keys from `<source>/etc/ssh/`
-- Deploy keys from `<source>/root/.ssh/`
-- User keys from `<source>/users/*/.ssh/`
+- Missing Ventoy key material or failed YubiKey decryption must leave SOPS activation unsuccessful; SSH and Tailscale are ordered after that activation.
+- SOPS age decryption uses `/run/rescue/ssh_host_ed25519_key`; the key is removed after secret activation.
+- SSH allows only the operator public key copied from the Ventoy `public/users/` tree. Root login, password login, and keyboard-interactive login are disabled.
+- Tailscale requests `tag:rescue`, uses memory-backed state and a per-boot runtime hostname, and removes the auth-key file after a successful join. The key must be separately provisioned with permission to use that tag; single-use/expiry policy is still to be verified.
+- Validate these guarantees in QEMU before using the ISO on a physical machine.
 
 ## Troubleshooting
 

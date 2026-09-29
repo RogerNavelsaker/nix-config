@@ -21,10 +21,9 @@
 }:
 let
   hostname = config.hostSpec.hostname or "iso";
+  username = builtins.head config.hostSpec.users;
 in
 {
-  environment.systemPackages = [ pkgs.load-keys ];
-
   boot = {
     initrd = {
       # Virtio support for QEMU testing
@@ -127,54 +126,27 @@ in
                 echo "Decrypting SSH host key..."
                 TEMP_KEY=$(mktemp)
                 if pass show "hosts/$HOST/ssh_host_ed25519_key" > "$TEMP_KEY" 2>/dev/null; then
-                  mkdir -p "$targetRoot/etc/ssh"
-                  mv "$TEMP_KEY" "$targetRoot/etc/ssh/ssh_host_ed25519_key"
-                  chmod 600 "$targetRoot/etc/ssh/ssh_host_ed25519_key"
-                  echo "[OK] SSH host key extracted"
+                  mkdir -p "$targetRoot/run/rescue"
+                  mv "$TEMP_KEY" "$targetRoot/run/rescue/ssh_host_ed25519_key"
+                  chmod 600 "$targetRoot/run/rescue/ssh_host_ed25519_key"
+                  echo "[OK] Temporary SOPS decryption key extracted to /run"
                   KEYS_EXTRACTED=$((KEYS_EXTRACTED + 1))
 
-                  # Copy public key from public/ directory
-                  if [ -f "/mnt/ventoy/public/hosts/$HOST/ssh_host_ed25519_key.pub" ]; then
-                    cp "/mnt/ventoy/public/hosts/$HOST/ssh_host_ed25519_key.pub" \
-                       "$targetRoot/etc/ssh/ssh_host_ed25519_key.pub"
-                    chmod 644 "$targetRoot/etc/ssh/ssh_host_ed25519_key.pub"
-                    echo "[OK] SSH host public key copied"
-                  fi
                 else
                   rm -f "$TEMP_KEY"
                   echo "[FAIL] Could not decrypt SSH host key"
                   echo "Yubikey may not be inserted or touch was not confirmed"
                 fi
 
-                # Extract deploy key if exists
-                echo "Checking for deploy key..."
-                TEMP_KEY=$(mktemp)
-                if pass show "hosts/$HOST/deploy_key_ed25519" > "$TEMP_KEY" 2>/dev/null; then
-                  mkdir -p "$targetRoot/root/.ssh"
-                  mv "$TEMP_KEY" "$targetRoot/root/.ssh/deploy_key_ed25519"
-                  chmod 600 "$targetRoot/root/.ssh/deploy_key_ed25519"
-                  echo "[OK] Deploy key extracted"
-                  KEYS_EXTRACTED=$((KEYS_EXTRACTED + 1))
-
-                  # Copy public key from public/ directory
-                  if [ -f "/mnt/ventoy/public/hosts/$HOST/deploy_key_ed25519.pub" ]; then
-                    cp "/mnt/ventoy/public/hosts/$HOST/deploy_key_ed25519.pub" \
-                       "$targetRoot/root/.ssh/deploy_key_ed25519.pub"
-                    chmod 644 "$targetRoot/root/.ssh/deploy_key_ed25519.pub"
-                    echo "[OK] Deploy public key copied"
-                  fi
-
-                  # Create SSH config for GitHub
-                  cat > "$targetRoot/root/.ssh/config" << 'SSHCONF'
-        Host github.com
-          IdentityFile /root/.ssh/deploy_key_ed25519
-          IdentitiesOnly yes
-          StrictHostKeyChecking accept-new
-        SSHCONF
-                  chmod 600 "$targetRoot/root/.ssh/config"
+                # Install only the public operator key for inbound SSH. Never copy
+                # deploy private keys or user private keys into rescue media.
+                AUTHORIZED_KEY="/mnt/ventoy/public/users/${username}/id_ed25519.pub"
+                if [ -f "$AUTHORIZED_KEY" ]; then
+                  install -D -m 0600 "$AUTHORIZED_KEY" \
+                    "$targetRoot/home/${username}/.ssh/authorized_keys"
+                  echo "[OK] Operator public key installed for ${username}"
                 else
-                  rm -f "$TEMP_KEY"
-                  echo "[SKIP] No deploy key found (optional)"
+                  echo "[WARN] No operator public key found; remote SSH access will be unavailable"
                 fi
 
                 # Cleanup

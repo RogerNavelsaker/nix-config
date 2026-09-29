@@ -48,8 +48,8 @@ nix-config/
 ## Development
 
 ```bash
-direnv allow             # Preferred: Flox + direnv
-nix develop              # Fallback: flake devshell
+# Workspace-wide shared tools are activated by direnv from ~/Repositories
+nix develop              # Project-specific NixOS and Home Manager commands
 ```
 
 ## Build Commands

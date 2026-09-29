@@ -159,7 +159,8 @@
           users = [ "rona" ];
           system = "x86_64-linux";
           stateVersion = "25.11";
-          standaloneHM = false;
+          # Keep the rescue/installer image independent of the full Home Manager environment.
+          standaloneHM = true;
           secrets = inputs.nix-secrets;
           features = {
             opt-in = [ "wifi/NaCo" ];
