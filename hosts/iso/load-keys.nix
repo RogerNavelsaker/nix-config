@@ -105,7 +105,7 @@ in
         echo "=========================================="
         echo ""
 
-      # Use GNUPGHOME from postDeviceCommands or create new one
+        # Use GNUPGHOME from postDeviceCommands or create new one
         if [ -z "$GNUPGHOME" ] || [ ! -d "$GNUPGHOME" ]; then
           GNUPGHOME=$(mktemp -d)
           export GNUPGHOME
