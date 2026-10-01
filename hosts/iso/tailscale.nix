@@ -37,8 +37,10 @@ in
 
   networking.firewall.allowedUDPPorts = [ config.services.tailscale.port ];
 
-  sops.useSystemdActivation = true;
-  sops.age.sshKeyPaths = [ "/run/rescue/ssh_host_ed25519_key" ];
+  sops = {
+    useSystemdActivation = true;
+    age.sshKeyPaths = [ "/run/rescue/ssh_host_ed25519_key" ];
+  };
 
   # Drop the temporary SOPS identity after all secrets have been materialized.
   systemd.services.sops-install-secrets.serviceConfig.ExecStartPost =
