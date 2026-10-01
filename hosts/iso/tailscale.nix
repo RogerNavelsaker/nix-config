@@ -37,25 +37,36 @@ in
 
   networking.firewall.allowedUDPPorts = [ config.services.tailscale.port ];
 
-  sops.useSystemdActivation = true;
-  sops.age.sshKeyPaths = [ "/run/rescue/ssh_host_ed25519_key" ];
+  sops = {
+    useSystemdActivation = true;
+    age.sshKeyPaths = [ "/run/rescue/ssh_host_ed25519_key" ];
+    secrets."ts-auth-key" = {
+      sopsFile = secrets + "/hosts/${config.networking.hostName}/secrets.yaml";
+      key = "tailscale/auth_key";
+      mode = "0400";
+      restartUnits = [ ];
+    };
+  };
 
   # Drop the temporary SOPS identity after all secrets have been materialized.
   systemd.services.sops-install-secrets.serviceConfig.ExecStartPost =
     "${pkgs.coreutils}/bin/rm -f /run/rescue/ssh_host_ed25519_key";
 
-  sops.secrets."ts-auth-key" = {
-    sopsFile = secrets + "/hosts/${config.networking.hostName}/secrets.yaml";
-    key = "tailscale/auth_key";
-    mode = "0400";
-    restartUnits = [ ];
-  };
-
   systemd.services.tailscale-autoconnect = {
     description = "Join restricted rescue node to Tailscale";
-    after = [ "network-online.target" "sops-install-secrets.service" "tailscaled.service" ];
-    wants = [ "network-online.target" "tailscaled.service" ];
-    requires = [ "sops-install-secrets.service" "tailscaled.service" ];
+    after = [
+      "network-online.target"
+      "sops-install-secrets.service"
+      "tailscaled.service"
+    ];
+    wants = [
+      "network-online.target"
+      "tailscaled.service"
+    ];
+    requires = [
+      "sops-install-secrets.service"
+      "tailscaled.service"
+    ];
     wantedBy = [ "multi-user.target" ];
     path = [ pkgs.coreutils ];
     serviceConfig = {
