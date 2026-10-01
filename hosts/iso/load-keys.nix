@@ -15,7 +15,6 @@
 #       └── users/<username>/*.pub
 {
   lib,
-  pkgs,
   config,
   ...
 }:
