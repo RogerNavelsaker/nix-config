@@ -197,7 +197,6 @@
           stateVersion = "25.11";
           features = {
             opt-in = [
-              "autofirma"
               "beeper"
               "bitwarden"
               "claude-code"
