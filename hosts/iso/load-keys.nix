@@ -13,12 +13,7 @@
 #   └── public/            # Public keys
 #       ├── hosts/<hostname>/*.pub
 #       └── users/<username>/*.pub
-{
-  lib,
-  pkgs,
-  config,
-  ...
-}:
+{ lib, config, ... }:
 let
   hostname = config.hostSpec.hostname or "iso";
   username = builtins.head config.hostSpec.users;
