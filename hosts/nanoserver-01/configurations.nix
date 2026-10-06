@@ -88,4 +88,52 @@
     ];
   };
 
+  nanoserver-01-update-v3-a = {
+    hostname = "nanoserver-01";
+    users = [ "rona" ];
+    system = "x86_64-linux";
+    stateVersion = "25.11";
+    secrets = inputs.nix-secrets;
+    features.opt-in = [
+      "appliance"
+      "appliance-disko"
+      "passwordless-sudo"
+      "wifi/NaCo"
+    ];
+    extraModules = [
+      {
+        appliance = {
+          rootVersion = "3";
+          rootSlot = "a";
+          storeClosureToplevels = [
+            self.nixosConfigurations.nanoserver-01-update-v3-b.config.system.build.toplevel
+          ];
+          peerUki = self.nixosConfigurations.nanoserver-01-update-v3-b.config.system.build.uki;
+        };
+      }
+    ];
+  };
+
+  nanoserver-01-update-v3-b = {
+    hostname = "nanoserver-01";
+    users = [ "rona" ];
+    system = "x86_64-linux";
+    stateVersion = "25.11";
+    secrets = inputs.nix-secrets;
+    features.opt-in = [
+      "appliance"
+      "appliance-disko"
+      "passwordless-sudo"
+      "wifi/NaCo"
+    ];
+    extraModules = [
+      {
+        appliance = {
+          rootVersion = "3";
+          rootSlot = "b";
+        };
+      }
+    ];
+  };
+
 }

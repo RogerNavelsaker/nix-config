@@ -1,7 +1,11 @@
-{ lib, pkgs, self }:
+{
+  lib,
+  pkgs,
+  self,
+}:
 let
-  slotA = self.nixosConfigurations.nanoserver-01-update-v2-a;
-  slotB = self.nixosConfigurations.nanoserver-01-update-v2-b;
+  slotA = self.nixosConfigurations.nanoserver-01-update-v3-a;
+  slotB = self.nixosConfigurations.nanoserver-01-update-v3-b;
   slotAStoreTransfer = builtins.readFile (
     slotA.config.environment.etc."sysupdate.nanoserver.d/10-store.transfer".source
   );
@@ -21,8 +25,12 @@ assert
   slotA.config.appliance.update.sourceUrl
   == "https://github.com/RogerNavelsaker/nix-config/releases/latest/download";
 assert slotB.config.appliance.update.sourceUrl == slotA.config.appliance.update.sourceUrl;
-assert lib.any (package: package.name == "appliance-update") slotA.config.environment.systemPackages;
-assert lib.any (package: package.name == "appliance-update") slotB.config.environment.systemPackages;
+assert lib.any (
+  package: package.name == "appliance-update"
+) slotA.config.environment.systemPackages;
+assert lib.any (
+  package: package.name == "appliance-update"
+) slotB.config.environment.systemPackages;
 assert builtins.elem "appliance-disko" slotA.config.hostSpec.enabledFeatures;
 assert builtins.elem "appliance-disko" slotB.config.hostSpec.enabledFeatures;
 assert !slotA.config.nix.enable;
@@ -48,6 +56,8 @@ assert slotA.config.boot.initrd.systemd.enable;
 assert slotA.config.networking.useNetworkd;
 assert slotA.config.appliance.rootSlot == "a";
 assert slotB.config.appliance.rootSlot == "b";
+assert slotA.config.appliance.rootVersion == "3";
+assert slotB.config.appliance.rootVersion == "3";
 assert slotA.config.fileSystems."/".device == "tmpfs";
 assert slotB.config.fileSystems."/".device == "tmpfs";
 assert slotA.config.fileSystems."/nix/store".device == slotA.config.appliance.btrfs.rootMemberA;
@@ -65,8 +75,10 @@ assert lib.hasInfix "nanoserver-store_@v.registration" slotARegistrationTransfer
 assert lib.hasInfix "Verify=yes" slotARegistrationTransfer;
 assert builtins.elem "timers.target" slotA.config.systemd.timers.systemd-sysupdate.wantedBy;
 assert !slotA.config.systemd.sysupdate.reboot.enable;
-assert lib.hasInfix "MatchPattern=nanoserver-root_@v+@l-@d.efi\nMatchPattern=nanoserver-root_@v.efi" slotAUkiTransfer;
-assert lib.hasInfix "MatchPattern=nanoserver-root_@v+@l-@d.efi\nMatchPattern=nanoserver-root_@v.efi" slotBUkiTransfer;
+assert lib.hasInfix "MatchPattern=nanoserver-root_@v+@l-@d.efi\nMatchPattern=nanoserver-root_@v.efi"
+  slotAUkiTransfer;
+assert lib.hasInfix "MatchPattern=nanoserver-root_@v+@l-@d.efi\nMatchPattern=nanoserver-root_@v.efi"
+  slotBUkiTransfer;
 assert lib.hasInfix "Type=url-file" slotAUkiTransfer;
 assert lib.hasInfix "Verify=yes" slotAUkiTransfer;
 assert builtins.elem

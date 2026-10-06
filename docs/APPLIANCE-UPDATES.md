@@ -19,7 +19,7 @@ The export is unencrypted and must be treated as a CI signing credential. Keep i
 
 Every successful push to `main` triggers publication from the exact tested commit. The workflow validates the flake, discovers all `*-update-bundle` package outputs, builds and combines them, creates a binary-mode SHA-256 manifest, signs it with the CI key, and publishes the signed manifest and payload files. The release becomes the `latest` release used by appliances. A workflow-dispatch run on `main` can publish the current commit after the signing secret is configured. Release tags are commit-specific and must not be reused. Bundle filenames must be unique across appliance hosts; version numbers are carried in each filename and are independently selected by each host's `MatchPattern`.
 
-The first tagged build currently contains the committed Nanoserver v2 bundle. It is useful for verifying the publishing path but is not a newer update for a host already running v2. Future update bundles must increment that host's version and include the matching slot UKIs and store registration before tagging.
+The initial published release contained the Nanoserver v2 bundle and verified the publishing path, but it is not a newer update for a host already running v2. Current source now defines a v3 bundle with the generic updater and signed remote source. CI will publish it after the version-3 slot check and bundle build pass. The running host still needs an authorized update before it gains the new command and polling configuration.
 
 ## Poll, stage, and activate
 
