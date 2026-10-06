@@ -96,6 +96,8 @@ let
       entry: entry.directory == ".local/share/containers"
     ) cfg.environment.persistence."/persist".users.rona.directories
     && builtins.elem "sops-install-secrets.service" cfg.systemd.services.k3s.requires
+    && builtins.elem "avahi-daemon.service" cfg.systemd.services.k3s.after
+    && cfg.services.avahi.nssmdns4
     && (
       if profile.role == "server" then
         builtins.all (port: builtins.elem port cfg.networking.firewall.interfaces.eno1.allowedTCPPorts) [

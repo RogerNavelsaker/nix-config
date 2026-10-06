@@ -49,10 +49,16 @@ in
     ];
   };
 
-  # The shared token is installed by sops-nix at boot before K3s consumes it.
+  # Make the Avahi .local endpoint resolvable by libc clients and start K3s
+  # after both the resolver and its host token are available.
+  services.avahi.nssmdns4 = true;
   systemd.services.k3s = {
-    after = [ "sops-install-secrets.service" ];
+    after = [
+      "sops-install-secrets.service"
+      "avahi-daemon.service"
+    ];
     requires = [ "sops-install-secrets.service" ];
+    wants = [ "avahi-daemon.service" ];
   };
 
   # Miniservers use the hardware-verified wired interface eno1. Keep the API,

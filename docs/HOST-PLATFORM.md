@@ -8,7 +8,7 @@ The configuration is CI-only until separately authorized for rollout. It does no
 
 ## Addressing and firewall
 
-- Initial K3s join/API address: `miniserver-01.local:6443`, advertised by existing Avahi.
+- Initial K3s join/API address: `miniserver-01.local:6443`, advertised by existing Avahi and resolved through `nss-mdns` on each platform host.
 - This provides three-member etcd quorum, but the configured API address is **not HA**; agents and clients initially depend on miniserver-01. Use a separately approved LAN VIP/load balancer before describing the API endpoint as highly available.
 - Pod CIDR: `10.42.0.0/16`; Service CIDR: `10.43.0.0/16`. Check both against LAN/VPN routes before rollout.
 - Miniservers allow API, kubelet, etcd, and Flannel VXLAN traffic only on wired `eno1`. Nanoserver opens only kubelet and Flannel ports (no API or etcd listener) on the wired `en+`/`eth+` interface prefixes; its WLAN is excluded. Those prefix rules require the configured iptables backend. Remote Kubernetes API access should use an SSH tunnel; K3s ports are not opened on `tailscale0`.
