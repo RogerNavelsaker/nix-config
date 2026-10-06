@@ -116,7 +116,16 @@ let
         && !(builtins.elem 8472 cfg.networking.firewall.allowedUDPPorts)
     );
 
+  transferNames = [
+    "sysupdate.nanoserver.d/10-store.transfer"
+    "sysupdate.nanoserver.d/20-registration.transfer"
+    "sysupdate.nanoserver.d/80-uki-boot-a.transfer"
+    "sysupdate.nanoserver.d/81-uki-boot-b.transfer"
+  ];
   v3 = self.nixosConfigurations.nanoserver-01-update-v3-a.config;
+  v4 = self.nixosConfigurations.nanoserver-01-update-v4-a.config;
+  v3Transfers = map (name: v3.environment.etc.${name}.source) transferNames;
+  v4Transfers = map (name: v4.environment.etc.${name}.source) transferNames;
   fluxManifests = self.nixosConfigurations.miniserver-01.config.services.k3s.manifests;
   fluxInstallManifest = fluxManifests."00-flux-install".source;
 in
@@ -124,6 +133,7 @@ assert builtins.all profilePasses expectedProfiles;
 assert !v3.services.k3s.enable;
 assert !v3.virtualisation.libvirtd.enable;
 assert !v3.virtualisation.podman.enable;
+assert builtins.hasAttr "systemd/import-pubring.gpg" v4.environment.etc;
 assert builtins.hasAttr "00-flux-install" fluxManifests;
 assert builtins.hasAttr "10-flux-source" fluxManifests;
 assert
@@ -131,5 +141,14 @@ assert
 pkgs.runCommand "host-platform-check" { nativeBuildInputs = [ pkgs.gnugrep ]; } ''
   test -s ${fluxInstallManifest}
   grep -q 'kind: CustomResourceDefinition' ${fluxInstallManifest}
+  for transfer in ${lib.concatMapStringsSep " " (path: toString path) v3Transfers}; do
+    grep -q '^[[:space:]]*Verify=yes$' "$transfer"
+  done
+  for transfer in ${lib.concatMapStringsSep " " (path: toString path) v4Transfers}; do
+    if grep -q '^[[:space:]]*Verify=yes$' "$transfer"; then
+      echo "Nanoserver v4 must omit unsupported systemd-sysupdate Verify keys" >&2
+      exit 1
+    fi
+  done
   touch "$out"
 ''

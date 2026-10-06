@@ -4,7 +4,7 @@
 
 The shared `host-platform` NixOS feature provides QEMU/KVM + libvirt, Podman, and K3s on three miniservers plus Nanoserver. K3s uses its built-in containerd; Podman remains a separate host runtime. Miniservers are server nodes with embedded etcd; Nanoserver is an agent. Flux reconciles the public baseline in `clusters/nanoserver-miniservers/`.
 
-The configuration is CI-only until separately authorized for rollout. It does not format disks, provision VMs, expose libvirt TCP APIs, deploy live, or alter the running/published Nanoserver v3 image. Nanoserver v4 is the first profile containing this stack. Miniserver profiles are still subject to the install-readiness gates in `docs/plans/miniserver-install-readiness.md`.
+The configuration is CI-only until separately authorized for rollout. It does not format disks, provision VMs, expose libvirt TCP APIs, deploy live, or alter the running/published Nanoserver v3 image. Nanoserver v4 is the first profile containing this stack and omits the unsupported systemd-sysupdate `Verify=` source keys; signed-manifest verification through the configured GPG keyring remains. Miniserver profiles are still subject to the install-readiness gates in `docs/plans/miniserver-install-readiness.md`.
 
 ## Addressing and firewall
 

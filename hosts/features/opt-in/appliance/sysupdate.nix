@@ -13,6 +13,9 @@ let
     espBPath
     ;
   inherit (config.appliance.btrfs) rootUuid rootMemberA rootMemberB;
+  # The Source Verify= key is unsupported by systemd-sysupdate 259. Keep it
+  # only in immutable pre-v4 transfers; v4+ rely on signed-manifest verification.
+  sourceVerify = lib.optionalString (lib.versionOlder config.appliance.rootVersion "4") "Verify=yes";
   storeTransfer = pkgs.writeText "${name}-store.transfer" ''
     [Transfer]
     ProtectVersion=%A
@@ -20,7 +23,7 @@ let
     [Source]
     Type=url-tar
     Path=${sourceUrl}
-    Verify=yes
+    ${sourceVerify}
     MatchPattern=${storeName}_@v.tar.xz
 
     [Target]
@@ -37,7 +40,7 @@ let
     [Source]
     Type=url-file
     Path=${sourceUrl}
-    Verify=yes
+    ${sourceVerify}
     MatchPattern=${storeName}_@v.registration
 
     [Target]
@@ -57,7 +60,7 @@ let
       [Source]
       Type=url-file
       Path=${sourceUrl}
-      Verify=yes
+      ${sourceVerify}
       MatchPattern=${rootName}_@v+@l-slot-${slot}.efi
 
       [Target]
@@ -217,7 +220,10 @@ in
         reboot.enable = false;
       };
       services.systemd-sysupdate = {
-        after = [ "persist.mount" "systemd-tmpfiles-setup.service" ];
+        after = [
+          "persist.mount"
+          "systemd-tmpfiles-setup.service"
+        ];
         requires = [ "persist.mount" ];
       };
       tmpfiles.rules = [
