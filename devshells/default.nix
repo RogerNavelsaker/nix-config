@@ -17,7 +17,7 @@ let
       packages ? [ ],
       commands ? [ ],
       shellHook ? "",
-      env ? [ ],
+      env ? { },
     }:
     pkgs.mkShell {
       inherit name;
@@ -25,11 +25,9 @@ let
       shellHook =
         (if motd != "" then "echo -e '${motd}'" else "")
         + common.shellHook
-        + (builtins.concatStringsSep "\n" (
-            map (c: "alias ${c.name}='${c.command}'") commands
-          ))
+        + (builtins.concatStringsSep "\n" (map (c: "alias ${c.name}='${c.command}'") commands))
         + shellHook;
-      env = common.env ++ env;
+      env = common.env // env;
     };
 in
 {

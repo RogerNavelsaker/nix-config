@@ -55,7 +55,7 @@ in
 
   # Common startup scripts
   shellHook = "";
-  env = [ ];
+  env = { };
 
   # Export mkGitHooks for project-specific use
   inherit mkGitHooks;

@@ -47,10 +47,7 @@ mkProjectShell {
     }
   ];
 
-  env = [
-    {
-      name = "RUST_BACKTRACE";
-      value = "1";
-    }
-  ];
+  env = {
+    RUST_BACKTRACE = "1";
+  };
 }
