@@ -35,6 +35,3 @@ jobs:
           .#checks.x86_64-linux.nanoserver-01-slot-uki
           .#packages.x86_64-linux.nanoserver-01-update-bundle
           --no-link --accept-flake-config
-
-      - name: Build Default Package
-        run: nix build .#default --accept-flake-config --no-link
