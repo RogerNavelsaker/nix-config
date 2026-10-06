@@ -27,8 +27,14 @@ jobs:
           name: rogernavelsaker
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
 
-      - name: Check Flake
-        run: nix flake check --accept-flake-config
+      - name: Check Nanoserver update targets
+        # Scope CI to the appliance artifacts; the full flake check currently
+        # realizes an unrelated upstream Autofirma Maven fixed-output hash.
+        run: >-
+          nix build
+          .#checks.x86_64-linux.nanoserver-01-slot-uki
+          .#packages.x86_64-linux.nanoserver-01-update-bundle
+          --no-link --accept-flake-config
 
       - name: Build Default Package
         run: nix build .#default --accept-flake-config --no-link

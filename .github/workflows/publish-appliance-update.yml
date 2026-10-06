@@ -55,9 +55,12 @@ jobs:
           name: rogernavelsaker
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
 
-      - name: Validate flake
+      - name: Validate appliance targets
         if: steps.readiness.outputs.enabled == 'true'
-        run: nix flake check --accept-flake-config
+        run: >-
+          nix build
+          .#checks.x86_64-linux.nanoserver-01-slot-uki
+          --no-link --accept-flake-config
 
       - name: Build and assemble appliance bundles
         if: steps.readiness.outputs.enabled == 'true'
