@@ -9,6 +9,7 @@ let
     features.opt-in = [
       "appliance"
       "appliance-disko"
+      "host-platform"
     ];
   };
 in

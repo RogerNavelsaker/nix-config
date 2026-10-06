@@ -72,10 +72,10 @@ jobs:
           mkdir -p "$stage"
           mapfile -t bundles < <(
             nix eval --json .#packages.x86_64-linux --apply builtins.attrNames \
-              | jq -r '.[] | select(endswith("-update-bundle"))'
+              | jq -r '.[] | select(endswith("-bundle"))'
           )
           ((${#bundles[@]} > 0)) || {
-            echo "No *-update-bundle package outputs are defined." >&2
+            echo "No *-bundle package outputs are defined." >&2
             exit 1
           }
           for attr in "${bundles[@]}"; do
@@ -99,6 +99,14 @@ jobs:
             exit 1
           }
           (cd "$stage" && sha256sum --binary "${payloads[@]}" > SHA256SUMS)
+          max_asset_bytes=1900000000
+          for file in "$stage"/*; do
+            size=$(stat -c '%s' "$file")
+            if (( size > max_asset_bytes )); then
+              echo "Release asset exceeds the safe 1.9 GB limit: $(basename "$file") ($size bytes)." >&2
+              exit 1
+            fi
+          done
           echo "stage=$stage" >> "$GITHUB_OUTPUT"
 
       - name: Sign update manifest

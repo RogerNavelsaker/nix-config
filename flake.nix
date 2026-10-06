@@ -93,6 +93,13 @@
       url = "github:RogerNavelsaker/nix-secrets";
       flake = false;
     };
+
+    # Keep cluster bootstrap credentials isolated so the immutable Nanoserver
+    # v3 closure continues to use the existing shared secrets input.
+    nix-secrets-cluster = {
+      url = "github:RogerNavelsaker/nix-secrets?ref=feat/k3s-cluster-token";
+      flake = false;
+    };
   };
 
   outputs =
