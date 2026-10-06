@@ -17,6 +17,7 @@ ehthumbs.db
 Thumbs.db
 
 .direnv/
+.devenv/
 .envrc.local
 *.qcow2
 .nixie
