@@ -8,16 +8,6 @@
   deadnix.enable = true;
   statix.enable = true;
 
-  # Syntax validation
-  nix-syntax = {
-    enable = true;
-    name = "nix-syntax";
-    description = "Validate Nix syntax with nix-instantiate --parse";
-    entry = "${pkgs.nix}/bin/nix-instantiate --parse";
-    files = "\\.nix$";
-    pass_filenames = true;
-  };
-
   # Post-merge notification for flake changes
   flake-changed-notify = {
     enable = true;

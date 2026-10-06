@@ -2,3 +2,88 @@
 inputs:
   nixpkgs:
     url: github:cachix/devenv-nixpkgs/rolling
+  nixpkgs-stable:
+    url: github:NixOS/nixpkgs/nixos-25.11
+  nixpkgs-unstable:
+    url: github:NixOS/nixpkgs/nixos-unstable
+  nixpkgs-master:
+    url: github:NixOS/nixpkgs/master
+  systems:
+    url: github:nix-systems/default-linux
+  nix-lib:
+    url: github:RogerNavelsaker/nix-lib
+    inputs:
+      nixpkgs:
+        follows: nixpkgs
+      systems:
+        follows: systems
+  home-manager:
+    url: github:nix-community/home-manager
+    inputs:
+      nixpkgs:
+        follows: nixpkgs
+  sops-nix:
+    url: github:mic92/sops-nix
+    inputs:
+      nixpkgs:
+        follows: nixpkgs
+  impermanence:
+    url: github:nix-community/impermanence/home-manager-v1
+  hardware:
+    url: github:NixOS/nixos-hardware
+  disko:
+    url: github:nix-community/disko
+    inputs:
+      nixpkgs:
+        follows: nixpkgs
+  comin:
+    url: github:nlewo/comin
+    inputs:
+      nixpkgs:
+        follows: nixpkgs
+  pog:
+    url: github:jpetrucciani/pog
+    inputs:
+      nixpkgs:
+        follows: nixpkgs
+  git-hooks:
+    url: github:cachix/git-hooks.nix
+    inputs:
+      nixpkgs:
+        follows: nixpkgs
+  llm-agents:
+    url: github:numtide/llm-agents.nix
+  plasma-manager:
+    url: github:nix-community/plasma-manager
+    inputs:
+      nixpkgs:
+        follows: nixpkgs
+      home-manager:
+        follows: home-manager
+  autofirma-nix:
+    url: github:nix-community/autofirma-nix
+    inputs:
+      nixpkgs:
+        follows: nixpkgs
+  nixgl:
+    url: github:nix-community/nixGL
+    inputs:
+      nixpkgs:
+        follows: nixpkgs
+  nix-vscode-extensions:
+    url: github:nix-community/nix-vscode-extensions
+    inputs:
+      nixpkgs:
+        follows: nixpkgs
+  nix-secrets:
+    url: github:RogerNavelsaker/nix-secrets
+    flake: false
+nixConfig:
+  extra-substituters:
+    - https://cachix.cachix.org
+    - https://nix-community.cachix.org
+    - https://numtide.cachix.org
+  extra-trusted-public-keys:
+    - cachix.cachix.org-1:eWNHQldwUO7G2VkjpnjDbWwy4KQ/HNxht7H4SSoMckM=
+    - nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=
+    - numtide.cachix.org-1:2ps1kLBUWjxIneOy1Ik6cQjb41X0iXVXeHigGmycPPE=

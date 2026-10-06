@@ -3,6 +3,8 @@
   pkgs,
   lib,
   self,
+  diskoLib,
+  diskoModule,
 }:
 let
   # Use nixpkgs lib for standard functions
@@ -19,6 +21,19 @@ let
   homeChecks = mapAttrs' (
     name: config: nameValuePair "home-${name}" config.activationPackage
   ) self.homeConfigurations;
+
+  nanoserverProfiles = [
+    "nanoserver-01"
+    "nanoserver-01-slot-b"
+    "nanoserver-01-update-v2-a"
+    "nanoserver-01-update-v2-b"
+  ];
+  passwordlessSudoCheck =
+    assert builtins.all (
+      profile: !self.nixosConfigurations.${profile}.config.security.sudo.wheelNeedsPassword
+    ) nanoserverProfiles;
+    assert self.nixosConfigurations.miniserver-01.config.security.sudo.wheelNeedsPassword;
+    pkgs.runCommand "passwordless-sudo-opt-in-check" { } "touch $out";
 
   # Check formatting (--no-require-git needed since store path has no .git)
   formatCheck = pkgs.runCommand "format-check" { } ''
@@ -62,6 +77,42 @@ let
     touch $out
   '';
 
+  nanoserverSlotUkiCheck = import ./tests/nanoserver-slot-uki.nix { inherit lib pkgs self; };
+  nanoserverDiskoTests = lib.optionalAttrs pkgs.stdenv.hostPlatform.isx86_64 {
+    nanoserver-01-disko-layout = import ./tests/nanoserver-disko-layout.nix {
+      inherit
+        diskoLib
+        diskoModule
+        lib
+        pkgs
+        self
+        ;
+    };
+  };
+  miniserverDiskoTests = lib.optionalAttrs pkgs.stdenv.hostPlatform.isx86_64 (
+    builtins.listToAttrs (
+      map
+        (hostname: {
+          name = "${hostname}-disko-layout";
+          value = import ./tests/miniserver-disko-layout.nix {
+            inherit
+              diskoLib
+              diskoModule
+              lib
+              pkgs
+              self
+              hostname
+              ;
+          };
+        })
+        [
+          "miniserver-01"
+          "miniserver-02"
+          "miniserver-03"
+        ]
+    )
+  );
+
   # Validate feature structure
   featureStructureCheck =
     pkgs.runCommand "feature-structure-check"
@@ -84,6 +135,8 @@ let
 in
 nixosChecks
 // homeChecks
+// nanoserverDiskoTests
+// miniserverDiskoTests
 // {
   inherit
     formatCheck
@@ -91,19 +144,28 @@ nixosChecks
     statixCheck
     nixSyntaxCheck
     featureStructureCheck
+    passwordlessSudoCheck
     ;
+
+  nanoserver-01-slot-uki = nanoserverSlotUkiCheck;
 
   # All checks combined
   all =
     pkgs.runCommand "all-checks"
       {
-        buildInputs = builtins.attrValues (nixosChecks // homeChecks) ++ [
-          formatCheck
-          deadnixCheck
-          statixCheck
-          nixSyntaxCheck
-          featureStructureCheck
-        ];
+        buildInputs =
+          builtins.attrValues (nixosChecks // homeChecks)
+          ++ [
+            formatCheck
+            deadnixCheck
+            statixCheck
+            nixSyntaxCheck
+            featureStructureCheck
+            passwordlessSudoCheck
+            nanoserverSlotUkiCheck
+          ]
+          ++ builtins.attrValues nanoserverDiskoTests
+          ++ builtins.attrValues miniserverDiskoTests;
       }
       ''
         echo "All checks passed!"

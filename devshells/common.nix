@@ -39,26 +39,23 @@ in
     nixd
   ];
 
-  # Common commands available in all devshells
+  # Common commands available in all devshells (as shellHook aliases)
   commands = [
     {
       name = "fmt";
-      category = "validation";
-      help = "Format nix files";
       command = "nixfmt .";
+      help = "Format nix files";
     }
     {
       name = "lint";
-      category = "validation";
-      help = "Run all linters (deadnix + statix)";
       command = "deadnix . && statix check .";
+      help = "Run all linters (deadnix + statix)";
     }
   ];
 
   # Common startup scripts
-  startup = {
-    welcome.text = "";
-  };
+  shellHook = "";
+  env = [ ];
 
   # Export mkGitHooks for project-specific use
   inherit mkGitHooks;

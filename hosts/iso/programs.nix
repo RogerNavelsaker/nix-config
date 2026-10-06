@@ -14,5 +14,6 @@
     gptfdisk
     cryptsetup
     jq
+    nixos-facter
   ];
 }

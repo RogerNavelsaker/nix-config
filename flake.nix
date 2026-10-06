@@ -53,11 +53,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    devshell = {
-      url = "github:numtide/devshell";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     pog = {
       url = "github:jpetrucciani/pog";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -125,10 +120,11 @@
       };
       packages = lib.forEachSystem (
         pkgs:
-        import ./pkgs {
+        (import ./pkgs {
           inherit pkgs;
           inherit (nixpkgs) lib;
-        }
+        })
+        // (import ./hosts/nanoserver-01/update-bundles.nix { inherit pkgs self; })
       );
       formatter = lib.forEachSystem (pkgs: pkgs.nixfmt-rfc-style);
       devShells = lib.forEachSystem (pkgs: import ./devshells { inherit inputs pkgs; });
@@ -136,51 +132,50 @@
         pkgs:
         import ./checks.nix {
           inherit pkgs self;
+          diskoLib = inputs.disko.lib;
+          diskoModule = inputs.disko.nixosModules.disko;
           inherit (nixpkgs) lib;
         }
       );
 
       # NixOS configurations
-      nixosConfigurations = lib.mkSystems {
-        nanoserver = {
-          hostname = "nanoserver";
-          users = [ "rona" ];
-          system = "x86_64-linux";
-          stateVersion = "25.11";
-          #secrets = inputs.nix-secrets;
-          features = {
-            # opt-in = [ "tailscale" "docker" ];
-            # opt-out = [ "impermanence" ];
-          };
-        };
-
-        iso = {
-          hostname = "iso";
-          users = [ "rona" ];
-          system = "x86_64-linux";
-          stateVersion = "25.11";
-          # Keep the rescue/installer image independent of the full Home Manager environment.
-          standaloneHM = true;
-          secrets = inputs.nix-secrets;
-          features = {
-            opt-in = [ "wifi/NaCo" ];
-          };
-          # User features for integrated HM mode
-          userFeatures = {
-            opt-out = [
-              "git"
-              "direnv"
-              "ssh"
+      nixosConfigurations = lib.mkSystems (
+        (import ./hosts/nanoserver-01/configurations.nix { inherit inputs self; })
+        // (import ./hosts/miniserver-configurations.nix { inherit inputs self; })
+        // {
+          iso = {
+            hostname = "iso";
+            users = [ "rona" ];
+            system = "x86_64-linux";
+            stateVersion = "25.11";
+            # Keep the rescue/installer image independent of the full Home Manager environment.
+            standaloneHM = true;
+            extraModules = [
+              {
+                rescueIso.yubikeyUnlockTimeoutSeconds = 180;
+              }
             ];
+            secrets = inputs.nix-secrets;
+            features = {
+              opt-in = [ "wifi/NaCo" ];
+            };
+            # User features for integrated HM mode
+            userFeatures = {
+              opt-out = [
+                "git"
+                "direnv"
+                "ssh"
+              ];
+            };
           };
-        };
-      };
+        }
+      );
 
       # Home Manager configurations
       homeConfigurations = lib.mkHomes {
-        "rona@nanoserver" = {
+        "rona@nanoserver-01" = {
           username = "rona";
-          hostname = "nanoserver";
+          hostname = "nanoserver-01";
           system = "x86_64-linux";
           stateVersion = "25.11";
           #secrets = inputs.nix-secrets;

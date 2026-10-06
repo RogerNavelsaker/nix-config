@@ -1,21 +1,29 @@
-{ lib, ... }:
+{ config, lib, ... }:
+let
+  lanMode = builtins.elem config.rescueIso.networkMode [
+    "lan"
+    "rescue-lan"
+  ];
+in
 {
-  # SSH configuration
-  # Host keys will be loaded from external sources or generated on first boot
-  # Key loading logic is handled in load-keys.nix
   services.openssh = {
-    enable = true;
-    settings = {
+    enable = lib.mkForce lanMode;
+    openFirewall = lib.mkForce lanMode;
+    settings = lib.mkIf lanMode {
+      AllowUsers = [ "rona" ];
       PermitRootLogin = "no";
-      PasswordAuthentication = false;
+      PermitEmptyPasswords = false;
+      PasswordAuthentication = true;
       KbdInteractiveAuthentication = false;
-      AuthorizedKeysFile = "/home/rona/.ssh/authorized_keys";
+      PubkeyAuthentication = false;
     };
   };
 
-  systemd.services.sshd = {
-    wantedBy = lib.mkForce [ "multi-user.target" ];
+  systemd.services.sshd = lib.mkIf lanMode {
     requires = [ "sops-install-secrets.service" ];
-    after = [ "sops-install-secrets.service" ];
+    after = [
+      "network.target"
+      "sops-install-secrets.service"
+    ];
   };
 }

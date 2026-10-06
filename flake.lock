@@ -141,26 +141,6 @@
         "type": "github"
       }
     },
-    "devshell": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1768818222,
-        "narHash": "sha256-460jc0+CZfyaO8+w8JNtlClB2n4ui1RbHfPTLkpwhU8=",
-        "owner": "numtide",
-        "repo": "devshell",
-        "rev": "255a2b1725a20d060f566e4755dbf571bbbb5f76",
-        "type": "github"
-      },
-      "original": {
-        "owner": "numtide",
-        "repo": "devshell",
-        "type": "github"
-      }
-    },
     "disko": {
       "inputs": {
         "nixpkgs": [
@@ -506,11 +486,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1774125917,
-        "narHash": "sha256-pNTfq75Vf/2jXEjrcgqr3j0dsVekG0iRHqWln76MfOY=",
+        "lastModified": 1791192459,
+        "narHash": "sha256-4KBePvmJ4j1De8DuhHP+NLhHeoQrHyZxNZJntUGKkfg=",
         "owner": "RogerNavelsaker",
         "repo": "nix-lib",
-        "rev": "7d7a749782c0e9e6c7ffc37c76f3b98cac9c9541",
+        "rev": "6a0d3dea00bd95e6cb45995ea9ece4cfec895faa",
         "type": "github"
       },
       "original": {
@@ -522,11 +502,11 @@
     "nix-secrets": {
       "flake": false,
       "locked": {
-        "lastModified": 1774126825,
-        "narHash": "sha256-yR6P/VJ0T1vNPvNkDnCoFK8486YpjsXbMnaPPCmHNXM=",
+        "lastModified": 1791200641,
+        "narHash": "sha256-elfcTlAJ+ePjBexwFC/HuW+8afA8oPTfLfrJ/Ya2wCg=",
         "owner": "RogerNavelsaker",
         "repo": "nix-secrets",
-        "rev": "cd124c5b75059f63a0b2f5b3175d72b18629b603",
+        "rev": "baee11a1c0c3e035927c46a88f3d73e962dd4591",
         "type": "github"
       },
       "original": {
@@ -764,7 +744,6 @@
       "inputs": {
         "autofirma-nix": "autofirma-nix",
         "comin": "comin",
-        "devshell": "devshell",
         "disko": "disko",
         "git-hooks": "git-hooks",
         "hardware": "hardware",

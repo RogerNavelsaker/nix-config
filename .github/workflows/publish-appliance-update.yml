@@ -1,0 +1,150 @@
+name: Publish appliance update
+
+on:
+  workflow_run:
+    workflows: ["CI & Cache Build"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: appliance-release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: >-
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_branch == 'main') ||
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          persist-credentials: false
+
+      - name: Check signing secret is configured
+        id: readiness
+        env:
+          APPLIANCE_UPDATE_SIGNING_KEY: ${{ secrets.APPLIANCE_UPDATE_SIGNING_KEY }}
+        run: |
+          if [[ -n "$APPLIANCE_UPDATE_SIGNING_KEY" ]]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "Release publishing skipped: configure APPLIANCE_UPDATE_SIGNING_KEY first." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Install Nix
+        if: steps.readiness.outputs.enabled == 'true'
+        uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+
+      - name: Set up Cachix
+        if: steps.readiness.outputs.enabled == 'true'
+        uses: cachix/cachix-action@v16
+        with:
+          name: rogernavelsaker
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+
+      - name: Validate flake
+        if: steps.readiness.outputs.enabled == 'true'
+        run: nix flake check --accept-flake-config
+
+      - name: Build and assemble appliance bundles
+        if: steps.readiness.outputs.enabled == 'true'
+        id: bundles
+        shell: bash
+        run: |
+          set -euo pipefail
+          stage="$RUNNER_TEMP/appliance-update"
+          mkdir -p "$stage"
+          mapfile -t bundles < <(
+            nix eval --json .#packages.x86_64-linux --apply builtins.attrNames \
+              | jq -r '.[] | select(endswith("-update-bundle"))'
+          )
+          ((${#bundles[@]} > 0)) || {
+            echo "No *-update-bundle package outputs are defined." >&2
+            exit 1
+          }
+          for attr in "${bundles[@]}"; do
+            echo "Building $attr"
+            out=$(nix build ".#packages.x86_64-linux.$attr" \
+              --accept-flake-config --no-link --print-out-paths)
+            test -s "$out/SHA256SUMS"
+            while IFS= read -r -d '' file; do
+              name=$(basename "$file")
+              [[ "$name" == SHA256SUMS ]] && continue
+              if [[ -e "$stage/$name" ]]; then
+                echo "Bundle filename collision: $name" >&2
+                exit 1
+              fi
+              cp -- "$file" "$stage/$name"
+            done < <(find "$out" -mindepth 1 -maxdepth 1 -type f -print0)
+          done
+          mapfile -t payloads < <(find "$stage" -maxdepth 1 -type f -printf '%f\n' | sort)
+          ((${#payloads[@]} > 0)) || {
+            echo "Update bundle outputs contained no payload files." >&2
+            exit 1
+          }
+          (cd "$stage" && sha256sum --binary "${payloads[@]}" > SHA256SUMS)
+          echo "stage=$stage" >> "$GITHUB_OUTPUT"
+
+      - name: Sign update manifest
+        if: steps.readiness.outputs.enabled == 'true'
+        env:
+          APPLIANCE_UPDATE_SIGNING_KEY: ${{ secrets.APPLIANCE_UPDATE_SIGNING_KEY }}
+          SIGNING_FINGERPRINT: 73BAA73C579B78DAE64BDD811B7E4E0406122A8A
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$APPLIANCE_UPDATE_SIGNING_KEY" || {
+            echo "Set the APPLIANCE_UPDATE_SIGNING_KEY repository secret before publishing." >&2
+            exit 1
+          }
+          printf '%s\n' "$APPLIANCE_UPDATE_SIGNING_KEY" | gpg --batch --import
+          gpg --batch --with-colons --list-secret-keys "$SIGNING_FINGERPRINT" \
+            | grep -q "^fpr:::::::::$SIGNING_FINGERPRINT:"
+          gpg --batch --yes --armor --detach-sign \
+            --local-user "$SIGNING_FINGERPRINT" \
+            --output "${{ steps.bundles.outputs.stage }}/SHA256SUMS.gpg" \
+            "${{ steps.bundles.outputs.stage }}/SHA256SUMS"
+
+      - name: Check main is still at the tested commit
+        id: freshness
+        if: steps.readiness.outputs.enabled == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+        run: |
+          set -euo pipefail
+          current_main=$(gh api repos/${GITHUB_REPOSITORY}/commits/main --jq .sha)
+          if [[ "$current_main" == "$HEAD_SHA" ]]; then
+            echo "current=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "current=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping stale CI result $HEAD_SHA; main is now $current_main."
+          fi
+
+      - name: Publish signed release assets
+        if: steps.readiness.outputs.enabled == 'true' && steps.freshness.outputs.current == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+        run: |
+          set -euo pipefail
+          tag="appliance-release-$HEAD_SHA"
+          gh release create "$tag" \
+            "${{ steps.bundles.outputs.stage }}"/* \
+            --target "$HEAD_SHA" \
+            --latest \
+            --title "Appliance update $HEAD_SHA" \
+            --notes "Signed appliance update bundle built from commit $HEAD_SHA."

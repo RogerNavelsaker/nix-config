@@ -54,12 +54,12 @@ In any NixOS feature module:
 Using the library helpers:
 
 ```nix
-{ lib, ... }:
+{ nix-lib, ... }:
 {
   services.myservice.enable = true;
 
   environment.persistence."/persist".directories = [
-    (lib.nix-lib.impermanence.mkPersistDir "/var/lib/myservice" "myuser" "mygroup" "0700")
+    (nix-lib.impermanence.mkPersistDir "/var/lib/myservice" "myuser" "mygroup" "0700")
   ];
 }
 ```
@@ -67,10 +67,10 @@ Using the library helpers:
 ### Multiple Directories with Same Ownership
 
 ```nix
-{ lib, ... }:
+{ nix-lib, ... }:
 {
   environment.persistence."/persist".directories =
-    lib.nix-lib.impermanence.mkPersistDirs "root" "root" "0755" [
+    nix-lib.impermanence.mkPersistDirs "root" "root" "0755" [
       "/var/lib/service1"
       "/var/lib/service2"
       "/var/lib/service3"
@@ -80,7 +80,7 @@ Using the library helpers:
 
 ## User-Specific Persistence
 
-In your user's configuration (e.g., `users/rona/nanoserver.nix`):
+In your user's configuration (e.g., `users/rona/nanoserver-01.nix`):
 
 ```nix
 { config, ... }:
@@ -117,7 +117,7 @@ In your user's configuration (e.g., `users/rona/nanoserver.nix`):
 
 ## Library Helper Functions
 
-The repository provides several helper functions under `lib.nix-lib.impermanence`:
+The repository provides several helper functions under the `nix-lib.impermanence` module argument:
 
 ### `mkPersistDir`
 Create a directory persistence configuration with specific permissions.
@@ -207,9 +207,14 @@ If services fail due to missing directories, add them to `environment.persistenc
 
 ### Permission Issues
 
-Use `mkPersistDir` to set correct ownership:
+Use `mkPersistDir` to set correct ownership in a NixOS module:
 ```nix
-(lib.nix-lib.impermanence.mkPersistDir "/var/lib/service" "serviceuser" "servicegroup" "0700")
+{ nix-lib, ... }:
+{
+  environment.persistence."/persist".directories = [
+    (nix-lib.impermanence.mkPersistDir "/var/lib/service" "serviceuser" "servicegroup" "0700")
+  ];
+}
 ```
 
 ### Home Directory Not Created

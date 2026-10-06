@@ -5,6 +5,7 @@
 }:
 let
   ssid = "NaCo";
+  inherit (config.rescueWifi) autoConnect;
 in
 {
   imports = [ ./common.nix ];
@@ -19,7 +20,10 @@ in
   sops.templates."${ssid}.psk" = {
     content = ''
       [Security]
-      PreSharedKey=${config.sops.placeholder."wifi-${ssid}"}
+      Passphrase=${config.sops.placeholder."wifi-${ssid}"}
+
+      [Settings]
+      AutoConnect=${if autoConnect then "true" else "false"}
     '';
     path = "/var/lib/iwd/${ssid}.psk";
     mode = "0600";

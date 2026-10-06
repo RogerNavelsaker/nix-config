@@ -6,6 +6,7 @@
 {
   lib,
   inputs,
+  nix-lib,
   config,
   ...
 }:
@@ -20,7 +21,7 @@
       ];
 
       # Essential system directories that must persist
-      directories = [
+      directories = nix-lib.impermanence.mkPersistDirs "root" "root" "0755" [
         # Systemd state and timers
         "/var/lib/systemd"
         # NixOS state (profiles, generations, etc.)

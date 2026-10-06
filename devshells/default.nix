@@ -1,30 +1,35 @@
 # devshells/default.nix
-# Entry point for all devshells
+# Entry point for all devshells — uses plain mkShell (harmonized with nix-keys pattern)
 {
   inputs,
   pkgs,
 }:
 let
   inherit (pkgs.stdenv.hostPlatform) system;
-  inherit (inputs.devshell.legacyPackages.${system}) mkShell;
 
   common = import ./common.nix { inherit inputs pkgs system; };
 
-  # Helper to merge common config with project-specific
+  # Helper: merge common config with project-specific, using mkShell
   mkProjectShell =
     {
       name,
       motd ? "",
       packages ? [ ],
       commands ? [ ],
-      startup ? { },
+      shellHook ? "",
       env ? [ ],
     }:
-    mkShell {
-      inherit name motd env;
+    pkgs.mkShell {
+      inherit name;
       packages = common.packages ++ packages;
-      commands = common.commands ++ commands;
-      devshell.startup = common.startup // startup;
+      shellHook =
+        (if motd != "" then "echo -e '${motd}'" else "")
+        + common.shellHook
+        + (builtins.concatStringsSep "\n" (
+            map (c: "alias ${c.name}='${c.command}'") commands
+          ))
+        + shellHook;
+      env = common.env ++ env;
     };
 in
 {

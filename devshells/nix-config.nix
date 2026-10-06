@@ -4,6 +4,7 @@
   inputs,
   pkgs,
   mkProjectShell,
+  common,
   ...
 }:
 let
@@ -32,20 +33,18 @@ mkProjectShell {
   packages = with pkgs; [
     nh
     nix-diff
-    nixd
     gnumake
   ];
 
   commands = [
     {
       name = "os";
-      category = "system";
       help = "NixOS: os switch [hostname] | os boot [hostname] | os test [hostname]";
       command = ''
         local action="$1"
         shift
         if [[ -n "$1" && "$1" != -* ]]; then
-          nh os "$action" -H "$1" "''${@:2}"
+          nh os "$action" -H "$1" "$@"
         else
           nh os "$action" "$@"
         fi
@@ -53,13 +52,12 @@ mkProjectShell {
     }
     {
       name = "hm";
-      category = "system";
       help = "Home Manager: hm switch [user@host] | hm build [user@host]";
       command = ''
         local action="$1"
         shift
         if [[ -n "$1" && "$1" != -* ]]; then
-          nh home "$action" -c "$1" "''${@:2}"
+          nh home "$action" -c "$1" "$@"
         else
           nh home "$action" "$@"
         fi
@@ -67,40 +65,33 @@ mkProjectShell {
     }
     {
       name = "clean";
-      category = "system";
       help = "Garbage collection: clean all|user|system";
-      command = ''nh clean "$@"'';
+      command = "nh clean $@";
     }
     {
       name = "search";
-      category = "system";
       help = "Search nixpkgs";
-      command = ''nh search "$@"'';
+      command = "nh search $@";
     }
     {
       name = "check";
-      category = "validation";
       help = "Run all flake checks";
       command = "nix flake check";
     }
     {
       name = "show";
-      category = "validation";
       help = "Display flake outputs";
       command = "nix flake show";
     }
     {
       name = "update";
-      category = "flake";
       help = "Update all flake inputs";
       command = "nix flake update";
     }
   ];
 
-  startup = {
-    git-hooks.text = pre-commit-check.shellHook;
-    nh-config.text = ''
-      export NH_FLAKE="$(pwd)"
-    '';
-  };
+  shellHook = ''
+    ${pre-commit-check.shellHook}
+    export NH_FLAKE="$(pwd)"
+  '';
 }
