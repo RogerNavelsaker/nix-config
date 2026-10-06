@@ -53,9 +53,19 @@ in
 
   systemd.services.tailscale-autoconnect = {
     description = "Join restricted rescue node to Tailscale";
-    after = [ "network-online.target" "sops-install-secrets.service" "tailscaled.service" ];
-    wants = [ "network-online.target" "tailscaled.service" ];
-    requires = [ "sops-install-secrets.service" "tailscaled.service" ];
+    after = [
+      "network-online.target"
+      "sops-install-secrets.service"
+      "tailscaled.service"
+    ];
+    wants = [
+      "network-online.target"
+      "tailscaled.service"
+    ];
+    requires = [
+      "sops-install-secrets.service"
+      "tailscaled.service"
+    ];
     wantedBy = [ "multi-user.target" ];
     path = [ pkgs.coreutils ];
     serviceConfig = {

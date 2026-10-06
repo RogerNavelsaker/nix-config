@@ -100,68 +100,68 @@ in
 
       # Extract keys using GPG/Yubikey after target root is mounted
       postMountCommands = ''
-                echo ""
-                echo "=========================================="
-                echo "  INSERT YUBIKEY AND TOUCH WHEN PROMPTED"
-                echo "=========================================="
-                echo ""
+        echo ""
+        echo "=========================================="
+        echo "  INSERT YUBIKEY AND TOUCH WHEN PROMPTED"
+        echo "=========================================="
+        echo ""
 
-                # Use GNUPGHOME from postDeviceCommands or create new one
-                if [ -z "$GNUPGHOME" ] || [ ! -d "$GNUPGHOME" ]; then
-                  GNUPGHOME=$(mktemp -d)
-                  export GNUPGHOME
-                  chmod 700 "$GNUPGHOME"
-                fi
+        # Use GNUPGHOME from postDeviceCommands or create new one
+        if [ -z "$GNUPGHOME" ] || [ ! -d "$GNUPGHOME" ]; then
+          GNUPGHOME=$(mktemp -d)
+          export GNUPGHOME
+          chmod 700 "$GNUPGHOME"
+        fi
 
-                # Password store is in private/ directory (matches nix-keys repo structure)
-                export PASSWORD_STORE_DIR=/mnt/ventoy/private
+        # Password store is in private/ directory (matches nix-keys repo structure)
+        export PASSWORD_STORE_DIR=/mnt/ventoy/private
 
-                # Use hostname from NixOS config
-                HOST="${hostname}"
-                echo "Extracting keys for host: $HOST"
+        # Use hostname from NixOS config
+        HOST="${hostname}"
+        echo "Extracting keys for host: $HOST"
 
-                KEYS_EXTRACTED=0
+        KEYS_EXTRACTED=0
 
-                # Extract SSH host key (required for sops-nix)
-                echo "Decrypting SSH host key..."
-                TEMP_KEY=$(mktemp)
-                if pass show "hosts/$HOST/ssh_host_ed25519_key" > "$TEMP_KEY" 2>/dev/null; then
-                  mkdir -p "$targetRoot/run/rescue"
-                  mv "$TEMP_KEY" "$targetRoot/run/rescue/ssh_host_ed25519_key"
-                  chmod 600 "$targetRoot/run/rescue/ssh_host_ed25519_key"
-                  echo "[OK] Temporary SOPS decryption key extracted to /run"
-                  KEYS_EXTRACTED=$((KEYS_EXTRACTED + 1))
+        # Extract SSH host key (required for sops-nix)
+        echo "Decrypting SSH host key..."
+        TEMP_KEY=$(mktemp)
+        if pass show "hosts/$HOST/ssh_host_ed25519_key" > "$TEMP_KEY" 2>/dev/null; then
+          mkdir -p "$targetRoot/run/rescue"
+          mv "$TEMP_KEY" "$targetRoot/run/rescue/ssh_host_ed25519_key"
+          chmod 600 "$targetRoot/run/rescue/ssh_host_ed25519_key"
+          echo "[OK] Temporary SOPS decryption key extracted to /run"
+          KEYS_EXTRACTED=$((KEYS_EXTRACTED + 1))
 
-                else
-                  rm -f "$TEMP_KEY"
-                  echo "[FAIL] Could not decrypt SSH host key"
-                  echo "Yubikey may not be inserted or touch was not confirmed"
-                fi
+        else
+          rm -f "$TEMP_KEY"
+          echo "[FAIL] Could not decrypt SSH host key"
+          echo "Yubikey may not be inserted or touch was not confirmed"
+        fi
 
-                # Install only the public operator key for inbound SSH. Never copy
-                # deploy private keys or user private keys into rescue media.
-                AUTHORIZED_KEY="/mnt/ventoy/public/users/${username}/id_ed25519.pub"
-                if [ -f "$AUTHORIZED_KEY" ]; then
-                  install -D -m 0600 "$AUTHORIZED_KEY" \
-                    "$targetRoot/home/${username}/.ssh/authorized_keys"
-                  echo "[OK] Operator public key installed for ${username}"
-                else
-                  echo "[WARN] No operator public key found; remote SSH access will be unavailable"
-                fi
+        # Install only the public operator key for inbound SSH. Never copy
+        # deploy private keys or user private keys into rescue media.
+        AUTHORIZED_KEY="/mnt/ventoy/public/users/${username}/id_ed25519.pub"
+        if [ -f "$AUTHORIZED_KEY" ]; then
+          install -D -m 0600 "$AUTHORIZED_KEY" \
+            "$targetRoot/home/${username}/.ssh/authorized_keys"
+          echo "[OK] Operator public key installed for ${username}"
+        else
+          echo "[WARN] No operator public key found; remote SSH access will be unavailable"
+        fi
 
-                # Cleanup
-                echo ""
-                echo "Cleaning up..."
-                kill "$PCSCD_PID" 2>/dev/null || true
-                gpgconf --kill gpg-agent 2>/dev/null || true
-                umount /mnt/ventoy 2>/dev/null || true
-                rm -rf "$GNUPGHOME"
+        # Cleanup
+        echo ""
+        echo "Cleaning up..."
+        kill "$PCSCD_PID" 2>/dev/null || true
+        gpgconf --kill gpg-agent 2>/dev/null || true
+        umount /mnt/ventoy 2>/dev/null || true
+        rm -rf "$GNUPGHOME"
 
-                echo ""
-                echo "=========================================="
-                echo "  Key extraction complete: $KEYS_EXTRACTED keys"
-                echo "=========================================="
-                echo ""
+        echo ""
+        echo "=========================================="
+        echo "  Key extraction complete: $KEYS_EXTRACTED keys"
+        echo "=========================================="
+        echo ""
       '';
     };
 
