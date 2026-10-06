@@ -87,6 +87,7 @@ let
         "--tls-san=miniserver-01.local"
       ]
     )
+    && cfg.networking.firewall.backend == "iptables"
     && cfg.virtualisation.libvirtd.enable
     && cfg.virtualisation.podman.enable
     && builtins.elem "libvirtd" cfg.users.users.rona.extraGroups
@@ -105,8 +106,12 @@ let
         ]
         && builtins.elem 8472 cfg.networking.firewall.interfaces.eno1.allowedUDPPorts
       else
-        builtins.elem 10250 cfg.networking.firewall.allowedTCPPorts
-        && builtins.elem 8472 cfg.networking.firewall.allowedUDPPorts
+        builtins.elem 10250 cfg.networking.firewall.interfaces."en+".allowedTCPPorts
+        && builtins.elem 8472 cfg.networking.firewall.interfaces."en+".allowedUDPPorts
+        && builtins.elem 10250 cfg.networking.firewall.interfaces."eth+".allowedTCPPorts
+        && builtins.elem 8472 cfg.networking.firewall.interfaces."eth+".allowedUDPPorts
+        && !(builtins.elem 10250 cfg.networking.firewall.allowedTCPPorts)
+        && !(builtins.elem 8472 cfg.networking.firewall.allowedUDPPorts)
     );
 
   v3 = self.nixosConfigurations.nanoserver-01-update-v3-a.config;

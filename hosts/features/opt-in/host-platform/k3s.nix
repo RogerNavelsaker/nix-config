@@ -22,6 +22,10 @@ in
       assertion = isNanoserver || isControlPlane;
       message = "host-platform is only defined for nanoserver-01 and miniserver-01/02/03";
     }
+    {
+      assertion = config.networking.firewall.backend == "iptables";
+      message = "host-platform uses iptables interface-prefix matching for Nanoserver's wired K3s ports";
+    }
   ];
 
   sops.secrets."k3s-cluster-token" = {
@@ -53,23 +57,29 @@ in
 
   # Miniservers use the hardware-verified wired interface eno1. Keep the API,
   # embedded-etcd, kubelet, and Flannel ports off their WLAN interfaces.
-  networking.firewall.interfaces = lib.mkIf isControlPlane {
-    eno1 = {
-      allowedTCPPorts = [
-        10250
-      ]
-      ++ lib.optionals isControlPlane [
-        6443
-        2379
-        2380
-      ];
-      allowedUDPPorts = [ 8472 ];
-    };
-  };
-
-  # Nanoserver's hardware uses different/variable wired interface names. It is
-  # an agent only, so expose no API-server or etcd port; open only kubelet and
-  # Flannel's required host ports while allowing outbound API connections.
-  networking.firewall.allowedTCPPorts = lib.mkIf isNanoserver [ 10250 ];
-  networking.firewall.allowedUDPPorts = lib.mkIf isNanoserver [ 8472 ];
+  networking.firewall.interfaces = lib.mkMerge [
+    (lib.mkIf isControlPlane {
+      eno1 = {
+        allowedTCPPorts = [
+          6443
+          10250
+          2379
+          2380
+        ];
+        allowedUDPPorts = [ 8472 ];
+      };
+    })
+    # Nanoserver's wired names vary, but its networkd rules match en* and eth*.
+    # iptables' trailing + matches those prefixes without opening ports on WLAN.
+    (lib.mkIf isNanoserver {
+      "en+" = {
+        allowedTCPPorts = [ 10250 ];
+        allowedUDPPorts = [ 8472 ];
+      };
+      "eth+" = {
+        allowedTCPPorts = [ 10250 ];
+        allowedUDPPorts = [ 8472 ];
+      };
+    })
+  ];
 }
