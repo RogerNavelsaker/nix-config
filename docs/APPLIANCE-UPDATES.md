@@ -19,7 +19,7 @@ The export is unencrypted and must be treated as a CI signing credential. Keep i
 
 Every successful push to `main` triggers publication from the exact tested commit. The workflow validates the flake, discovers all `*-update-bundle` package outputs, builds and combines them, creates a binary-mode SHA-256 manifest, signs it with the CI key, and publishes the signed manifest and payload files. The release becomes the `latest` release used by appliances. A workflow-dispatch run on `main` can publish the current commit after the signing secret is configured. Release tags are commit-specific and must not be reused. Bundle filenames must be unique across appliance hosts; version numbers are carried in each filename and are independently selected by each host's `MatchPattern`.
 
-The initial published release contained the Nanoserver v2 bundle and verified the publishing path, but it is not a newer update for a host already running v2. Current source now defines a v3 bundle with the generic updater and signed remote source. CI will publish it after the version-3 slot check and bundle build pass. The running host still needs an authorized update before it gains the new command and polling configuration.
+The initial published release contained the Nanoserver v2 bundle and verified the publishing path, but it was not a newer update for a host already running v2. Release `appliance-release-b6931964ed72274e6f25110095e41f46698d1d4e` contains the signed v3 bundle. It was deployed to `nanoserver-01` after explicit authorization; v3 slot A is active and v2 remains installed for rollback.
 
 ## Poll, stage, and activate
 
@@ -33,4 +33,4 @@ sudo appliance-update <new-version>
 
 The command rechecks the mirrored root devices and mounts, requests confirmation, runs `systemd-sysupdate` for the requested version, and sets a one-shot boot entry on the currently active ESP. Reboot separately during an approved window. Keep the previous version available until the new boot passes its health gate; boot counting and the other slot provide the recovery path.
 
-The live Nanoserver must not be changed as part of CI verification. Publishing an artifact does not deploy the new NixOS configuration; deploying polling or activating an update still requires explicit authorization.
+CI publishing does not itself deploy or activate an update; the v3 deployment was performed separately after explicit authorization. Systemd 259 currently logs unsupported `Verify=` source keys but verifies the signed manifest by default with the configured keyring. Remove those keys before the next image-version bump. Keep release contents immutable per per-host numeric version; future deployment or reboot still requires explicit authorization.
