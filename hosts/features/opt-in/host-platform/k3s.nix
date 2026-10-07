@@ -29,7 +29,7 @@ in
   ];
 
   sops.secrets."k3s-cluster-token" = {
-    sopsFile = inputs.nix-secrets-cluster + "/clusters/nanoserver-miniservers/secrets.yaml";
+    sopsFile = inputs.nix-secrets + "/clusters/nanoserver-miniservers/secrets.yaml";
     key = "k3s/token";
     mode = "0400";
   };

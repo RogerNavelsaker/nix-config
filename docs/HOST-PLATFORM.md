@@ -30,7 +30,7 @@ No VM, Podman service, Kubernetes application, external ingress, or off-host bac
 6. Verify Flux source/kustomization Ready conditions and the `platform-system` namespace. Keep the public baseline and application workloads distinct.
 7. Test an etcd snapshot restore and a libvirt VM backup/restore before relying on persistent workloads. The repository configures local persistence only; it does not claim off-host recovery.
 
-The shared cluster token is SOPS-encrypted in the `nix-secrets` repository for the four host age recipients. The platform consumes it through the separate `nix-secrets-cluster` flake input, leaving the existing `nix-secrets` input unchanged for the immutable Nanoserver v3 closure. The NixOS service consumes it by `tokenFile`; the token is not embedded in the Nix store. Flux reads the public repository anonymously. Flux SOPS decryption is deferred until a separate Kubernetes-side age identity is provisioned for actual encrypted workload Secrets.
+The shared cluster token is SOPS-encrypted in the `nix-secrets` repository for the four host age recipients. The platform and existing host secrets use one `nix-secrets` flake input. The already-published Nanoserver v3 image and rollback assets remain unchanged. CI may rebuild source configurations for regression checks; this does not modify the published assets, and no v3 release asset is published or deployed by this work. The NixOS service consumes the token by `tokenFile`; the token is not embedded in the Nix store. Flux reads the public repository anonymously. Flux SOPS decryption is deferred until a separate Kubernetes-side age identity is provisioned for actual encrypted workload Secrets.
 
 ## Rollback
 

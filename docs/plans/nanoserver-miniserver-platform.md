@@ -33,13 +33,13 @@ Configure Nanoserver and all three miniservers with the same declarative host st
 - Add one shared opt-in NixOS feature for libvirt/QEMU/KVM, Podman, K3s common settings, and persistent state.
 - Apply it to all miniserver A/B profiles and only the new Nanoserver v4 A/B profiles. Preserve the live v3 profile and released assets.
 - Add per-host K3s roles, endpoint/bootstrap settings, token-file wiring, and scoped firewall rules.
-- Add the shared encrypted cluster token in the owning `nix-secrets` repository through a platform-only `nix-secrets-cluster` input; preserve the existing `nix-secrets` pin so Nanoserver v3 keeps its original source closure. No plaintext credential may enter `nix-config`, CI logs, or the Nix store.
+- Add the shared encrypted cluster token in the owning `nix-secrets` repository and consume it through the existing single `nix-secrets` input. Do not add a second flake input. Preserve the already-published Nanoserver v3 and rollback artifacts; CI may rebuild for regression checks, but never upload or treat a new build as a replacement v3 release. No plaintext credential may enter `nix-config`, CI logs, or the Nix store.
 - Add a Flux bootstrap/reconciliation path and a `clusters/nanoserver-miniservers/` manifest tree in Git. Keep application secrets SOPS-encrypted.
 - Extend NixOS evaluation/checks, signed bundle build/size gate, and operations documentation. No deployment is performed by CI.
 
 ## Implementation steps
 
-1. **Networking and secret bootstrap.** Use `miniserver-01.local:6443` as the stable initial join/API endpoint (provided by existing Avahi); explicitly document that etcd is three-node but the client API endpoint is a single-node availability dependency. Use K3s defaults `10.42.0.0/16` Pod and `10.43.0.0/16` Service CIDRs and assert the selected values in CI; review overlap with actual LAN/VPN routes before rollout. Store the shared cluster token in a dedicated SOPS-encrypted file with age recipients for all four hosts, accessed through `nix-secrets-cluster` only.
+1. **Networking and secret bootstrap.** Use `miniserver-01.local:6443` as the stable initial join/API endpoint (provided by existing Avahi); explicitly document that etcd is three-node but the client API endpoint is a single-node availability dependency. Use K3s defaults `10.42.0.0/16` Pod and `10.43.0.0/16` Service CIDRs and assert the selected values in CI; review overlap with actual LAN/VPN routes before rollout. Store the shared cluster token in a dedicated SOPS-encrypted file with age recipients for all four hosts, accessed through the existing `nix-secrets` input.
 2. **Create shared host feature.** Add `hosts/features/opt-in/host-platform/` to enable QEMU/KVM + libvirt and Podman; keep libvirt management local/SSH-only. Persist `/var/lib/libvirt`, `/var/lib/rancher/k3s`, and the chosen rootless Podman storage under `/persist`. Configure only required K3s ports on trusted interfaces.
 3. **Define K3s roles.** Set the three miniserver server roles and first-server `clusterInit`; set Nanoserver as agent in v4. Use `tokenFile`, explicit Pod/Service CIDRs, stable server endpoint, node address selection, and required TLS SANs.
 4. **Add GitOps bootstrap.** Add Flux installation/bootstrap manifests and a public read-only Git source rooted at `clusters/nanoserver-miniservers/` in `nix-config`. The initial baseline has no Kubernetes Secrets; defer Flux SOPS decryption until a separate Kubernetes-side age identity is provisioned, and never store an age private key in Git.
@@ -51,7 +51,7 @@ Configure Nanoserver and all three miniservers with the same declarative host st
 - `nix eval --raw .#nixosConfigurations.miniserver-01.config.services.k3s.role` (and equivalent for miniserver-02/03 and Nanoserver v4 agent) verifies intended roles without building.
 - Evaluate all relevant A/B configurations and the new platform feature; assert persistent paths, `tokenFile` use (never literal `token`), endpoint/TLS SAN consistency, K3s containerd, and firewall ports.
 - Build the focused Nanoserver slot check and v4 update bundle in GitHub Actions, not as a local appliance build. Fail if any release asset exceeds its size budget; signed publication is a separate authorized release step.
-- Validate Flux manifests with pinned Flux/Kustomize tooling and check that no plaintext secrets or private age keys are present. Verify the existing `nix-secrets` pin remains unchanged for the Nanoserver v3 profile.
+- Validate Flux manifests with pinned Flux/Kustomize tooling and check that no plaintext secrets or private age keys are present. Verify only one `nix-secrets` input is declared; this work does not publish or deploy a v3 or rollback asset.
 - Live bootstrap, K3s quorum, Podman/libvirt runtime smoke, GitOps reconciliation, and rollback are separate operator-authorized acceptance gates; CI config checks alone do not prove a running cluster.
 
 ## Rollback

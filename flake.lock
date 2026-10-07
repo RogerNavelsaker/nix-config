@@ -502,32 +502,15 @@
     "nix-secrets": {
       "flake": false,
       "locked": {
-        "lastModified": 1791200641,
-        "narHash": "sha256-elfcTlAJ+ePjBexwFC/HuW+8afA8oPTfLfrJ/Ya2wCg=",
+        "lastModified": 1791370419,
+        "narHash": "sha256-+uBLQOVEotoHcIw40KVynqpS06VcpwtHPhFYYcp+oHE=",
         "owner": "RogerNavelsaker",
         "repo": "nix-secrets",
-        "rev": "baee11a1c0c3e035927c46a88f3d73e962dd4591",
+        "rev": "cfd4a904c660ade9adcf3de8d9506fa07a8d679c",
         "type": "github"
       },
       "original": {
         "owner": "RogerNavelsaker",
-        "repo": "nix-secrets",
-        "type": "github"
-      }
-    },
-    "nix-secrets-cluster": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1791324371,
-        "narHash": "sha256-0ENZR3StSB7IrtU8OcVZ8UxrZDsym08l6qpnEREUlQE=",
-        "owner": "RogerNavelsaker",
-        "repo": "nix-secrets",
-        "rev": "f9b42e63d45ad632029173fdefddf51b9c733050",
-        "type": "github"
-      },
-      "original": {
-        "owner": "RogerNavelsaker",
-        "ref": "feat/k3s-cluster-token",
         "repo": "nix-secrets",
         "type": "github"
       }
@@ -769,7 +752,6 @@
         "llm-agents": "llm-agents",
         "nix-lib": "nix-lib",
         "nix-secrets": "nix-secrets",
-        "nix-secrets-cluster": "nix-secrets-cluster",
         "nix-vscode-extensions": "nix-vscode-extensions",
         "nixgl": "nixgl",
         "nixpkgs": "nixpkgs_4",
