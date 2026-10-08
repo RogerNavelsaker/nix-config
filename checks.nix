@@ -79,16 +79,7 @@ let
 
   nanoserverSlotUkiCheck = import ./tests/nanoserver-slot-uki.nix { inherit lib pkgs self; };
   hostPlatformCheck = import ./tests/host-platform.nix { inherit lib pkgs self; };
-  fluxBaselineCheck =
-    pkgs.runCommand "flux-gitops-manifests-check"
-      {
-        nativeBuildInputs = [ pkgs.kustomize ];
-      }
-      ''
-        kustomize build ${pathFromRoot "clusters/nanoserver-miniservers"} > "$out"
-        grep -q 'kind: Namespace' "$out"
-        grep -q 'name: platform-system' "$out"
-      '';
+
   actionlintCheck =
     pkgs.runCommand "github-actions-workflows-check"
       {
@@ -183,7 +174,6 @@ nixosChecks
   nanoserver-01-slot-uki = nanoserverSlotUkiCheck;
   workflow-lint = actionlintCheck;
   host-platform = hostPlatformCheck;
-  flux-manifests = fluxBaselineCheck;
   nanoserver-v4-asset-size = nanoserverV4AssetSizeCheck;
 
   # All checks combined
@@ -202,7 +192,6 @@ nixosChecks
             nanoserverSlotUkiCheck
             hostPlatformCheck
             actionlintCheck
-            fluxBaselineCheck
             nanoserverV4AssetSizeCheck
           ]
           ++ builtins.attrValues nanoserverDiskoTests

@@ -1,40 +1,35 @@
 # Nanoserver + Miniserver host platform
 
-## Scope and status
+## Scope and rollout phase
 
-The shared `host-platform` NixOS feature provides QEMU/KVM + libvirt, Podman, and K3s on three miniservers plus Nanoserver. K3s uses its built-in containerd; Podman remains a separate host runtime. Miniservers are server nodes with embedded etcd; Nanoserver is an agent. Flux reconciles the public baseline in `clusters/nanoserver-miniservers/`.
+The first rollout stage enables only QEMU/KVM + libvirt and Podman on the Nanoserver v4 profile and the miniserver NixOS profiles. It does not enable K3s or install a GitOps controller. Podman remains independent of any future Kubernetes container runtime.
 
-The configuration is CI-only until separately authorized for rollout. It does not format disks, provision VMs, expose libvirt TCP APIs, deploy live, or alter the running/published Nanoserver v3 image. Nanoserver v4 is the first profile containing this stack and omits the unsupported systemd-sysupdate `Verify=` source keys; signed-manifest verification through the configured GPG keyring remains. Miniserver profiles are still subject to the install-readiness gates in `docs/plans/miniserver-install-readiness.md`.
+The future cluster stage is separate: Cilium, MetalLB, Multus, and Tailscale are planned, with Argo CD preferred over Flux. That stage needs its own configuration, network/IP decisions, and rollout authorization. The current Nanoserver v3 image remains unchanged; v4 removes unsupported systemd-sysupdate `Verify=` keys while retaining signed-manifest verification through the configured GPG keyring.
 
-## Addressing and firewall
+Miniserver profiles are not physically installed yet and remain subject to `docs/plans/miniserver-install-readiness.md`. Do not run Disko or change disks as part of this host-services stage.
 
-- Initial K3s join/API address: `miniserver-01.local:6443`, advertised by existing Avahi and resolved through `nss-mdns` on each platform host.
-- This provides three-member etcd quorum, but the configured API address is **not HA**; agents and clients initially depend on miniserver-01. Use a separately approved LAN VIP/load balancer before describing the API endpoint as highly available.
-- Pod CIDR: `10.42.0.0/16`; Service CIDR: `10.43.0.0/16`. Check both against LAN/VPN routes before rollout.
-- Miniservers allow API, kubelet, etcd, and Flannel VXLAN traffic only on wired `eno1`. Nanoserver opens only kubelet and Flannel ports (no API or etcd listener) on the wired `en+`/`eth+` interface prefixes; its WLAN is excluded. Those prefix rules require the configured iptables backend. Remote Kubernetes API access should use an SSH tunnel; K3s ports are not opened on `tailscale0`.
-- Libvirt management stays on its local socket; use SSH transport for remote administration. Podman does not add a listening service.
+## Host services and access
+
+- Libvirt management stays on its local socket; use SSH transport for remote administration. Do not expose an unauthenticated libvirt TCP API.
+- Podman does not add a listening service. This configuration does not create containers, VMs, or workloads.
+- No Kubernetes API, ingress, MetalLB pool, or external service is configured in this stage.
 
 ## Persistent state
 
-The appliance root is ephemeral. Under `/persist` (mirrored NVMe), the feature preserves `/var/lib/libvirt`, `/var/lib/containers`, `/var/lib/rancher`, `/var/lib/kubelet`, and Rona's rootless Podman storage. The K3s embedded-etcd snapshots therefore remain on the NVMe mirror with the cluster state. RAID1 protects against a single NVMe failure; it is not an off-host backup. Choose and test an off-host snapshot/VM backup target before placing important workloads on the cluster.
+Nanoserver's root is ephemeral. Under `/persist` (mirrored NVMe), this stage preserves `/var/lib/libvirt`, `/var/lib/containers`, and Rona's rootless Podman storage. The mirror protects against a single NVMe failure, but is not an off-host backup. No VM images or container workloads are created by this change.
 
-No VM, Podman service, Kubernetes application, external ingress, or off-host backup destination is provisioned by this change.
+## Rollout and acceptance sequence
 
-## Bootstrap and acceptance sequence (operator authorization required)
+1. Build and validate the P/L-only Nanoserver v4 bundle in CI; confirm the v4 profile has K3s disabled and Podman/libvirt enabled.
+2. Before switching Nanoserver, verify the signed v4 release is available and the appliance updater's Btrfs mirror, both boot ESPs, and `/persist` preflight passes. Keep v3 and v2 rollback images immutable.
+3. Update Nanoserver through the existing `appliance-update` A/B path, reboot only after staging succeeds, then verify the active slot/version, `/dev/kvm`, `libvirtd.socket`, and Podman availability. Do not create VMs or containers during this stage.
+4. Miniserver installation and disk operations require their separate readiness gates and explicit authorization. Once installed, roll out host services one machine at a time and verify KVM/libvirt/Podman before continuing.
+5. Defer K3s, Cilium, MetalLB, Multus, Tailscale Operator, and Argo CD until a separate cluster-stage plan and approval.
 
-1. Complete the existing miniserver install and recovery gates; do not run Disko as part of this platform change.
-2. Before enabling libvirt, confirm firmware VT-x is enabled and `/dev/kvm` is present on each machine. CPU model support alone does not prove firmware enablement.
-3. Install/activate the miniserver profiles one at a time under a separate deployment authorization. Start miniserver-01 first and confirm its API and embedded-etcd health.
-4. Join miniserver-02 and miniserver-03, then verify three ready server nodes and etcd quorum.
-5. Deploy Nanoserver v4 only under separate authorization; verify its agent joins and returns to Ready after reboot.
-6. Verify Flux source/kustomization Ready conditions and the `platform-system` namespace. Keep the public baseline and application workloads distinct.
-7. Test an etcd snapshot restore and a libvirt VM backup/restore before relying on persistent workloads. The repository configures local persistence only; it does not claim off-host recovery.
-
-The shared cluster token is SOPS-encrypted in the `nix-secrets` repository for the four host age recipients. The platform and existing host secrets use one `nix-secrets` flake input. The already-published Nanoserver v3 image and rollback assets remain unchanged. CI may rebuild source configurations for regression checks; this does not modify the published assets, and no v3 release asset is published or deployed by this work. The NixOS service consumes the token by `tokenFile`; the token is not embedded in the Nix store. Flux reads the public repository anonymously. Flux SOPS decryption is deferred until a separate Kubernetes-side age identity is provisioned for actual encrypted workload Secrets.
+The repository continues to use one `nix-secrets` input. No cluster token is needed for this host-services stage. The already-published Nanoserver v3 image and v2 rollback remain unchanged. The currently running v3 host reports a failed generic `systemd-sysupdate.service` because it finds no generic transfer definitions; the explicit `nanoserver` component listing succeeds and verifies the signed manifest. Track that separately rather than treating it as proof that the A/B updater is unusable.
 
 ## Rollback
 
-- Nanoserver v3 and v2 remain the boot/update rollback options; never rewrite their published artifacts.
-- Keep each miniserver A/B slot and do not erase K3s state or etcd snapshots during diagnosis.
-- Disable Flux reconciliation before intentionally changing/removing the cluster baseline.
-- Host-state rollback does not restore application data or VM images without independent backups.
+- Keep Nanoserver v3 and v2 bootable; never rewrite published assets.
+- If v4 fails acceptance, boot the existing v3 slot and stop rollout.
+- Do not format disks, provision VMs, or delete persisted data during diagnosis.

@@ -35,7 +35,6 @@ jobs:
           .#checks.x86_64-linux.nanoserver-01-slot-uki
           .#checks.x86_64-linux.workflow-lint
           .#checks.x86_64-linux.host-platform
-          .#checks.x86_64-linux.flux-manifests
           .#checks.x86_64-linux.nanoserver-v4-asset-size
           .#packages.x86_64-linux.nanoserver-01-update-bundle
           .#packages.x86_64-linux.nanoserver-01-update-v4-bundle

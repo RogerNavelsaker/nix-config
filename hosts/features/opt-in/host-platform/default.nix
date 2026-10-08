@@ -1,4 +1,7 @@
-{ nix-lib, ... }:
+{ ... }:
 {
-  imports = nix-lib.scanModules ./.;
+  imports = [
+    ./virtualisation.nix
+    ./persistence.nix
+  ];
 }
