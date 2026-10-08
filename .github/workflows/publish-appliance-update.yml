@@ -70,29 +70,22 @@ jobs:
           set -euo pipefail
           stage="$RUNNER_TEMP/appliance-update"
           mkdir -p "$stage"
-          mapfile -t bundles < <(
-            nix eval --json .#packages.x86_64-linux --apply builtins.attrNames \
-              | jq -r '.[] | select(endswith("-bundle"))'
-          )
-          ((${#bundles[@]} > 0)) || {
-            echo "No *-bundle package outputs are defined." >&2
-            exit 1
-          }
-          for attr in "${bundles[@]}"; do
-            echo "Building $attr"
-            out=$(nix build ".#packages.x86_64-linux.$attr" \
-              --accept-flake-config --no-link --print-out-paths)
-            test -s "$out/SHA256SUMS"
-            while IFS= read -r -d '' file; do
-              name=$(basename "$file")
-              [[ "$name" == SHA256SUMS ]] && continue
-              if [[ -e "$stage/$name" ]]; then
-                echo "Bundle filename collision: $name" >&2
-                exit 1
-              fi
-              cp -- "$file" "$stage/$name"
-            done < <(find "$out" -mindepth 1 -maxdepth 1 -type f -print0)
-          done
+          # Publish only the new versioned bundle. The default v3 bundle and
+          # historical rollback assets must never be re-built/re-published.
+          attr=nanoserver-01-update-v4-bundle
+          echo "Building $attr"
+          out=$(nix build ".#packages.x86_64-linux.$attr" \
+            --accept-flake-config --no-link --print-out-paths)
+          test -s "$out/SHA256SUMS"
+          while IFS= read -r -d '' file; do
+            name=$(basename "$file")
+            [[ "$name" == SHA256SUMS ]] && continue
+            if [[ -e "$stage/$name" ]]; then
+              echo "Bundle filename collision: $name" >&2
+              exit 1
+            fi
+            cp -- "$file" "$stage/$name"
+          done < <(find "$out" -mindepth 1 -maxdepth 1 -type f -print0)
           mapfile -t payloads < <(find "$stage" -maxdepth 1 -type f -printf '%f\n' | sort)
           ((${#payloads[@]} > 0)) || {
             echo "Update bundle outputs contained no payload files." >&2
