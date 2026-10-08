@@ -502,11 +502,11 @@
     "nix-secrets": {
       "flake": false,
       "locked": {
-        "lastModified": 1791200641,
-        "narHash": "sha256-elfcTlAJ+ePjBexwFC/HuW+8afA8oPTfLfrJ/Ya2wCg=",
+        "lastModified": 1791370419,
+        "narHash": "sha256-+uBLQOVEotoHcIw40KVynqpS06VcpwtHPhFYYcp+oHE=",
         "owner": "RogerNavelsaker",
         "repo": "nix-secrets",
-        "rev": "baee11a1c0c3e035927c46a88f3d73e962dd4591",
+        "rev": "cfd4a904c660ade9adcf3de8d9506fa07a8d679c",
         "type": "github"
       },
       "original": {

@@ -78,6 +78,30 @@ let
   '';
 
   nanoserverSlotUkiCheck = import ./tests/nanoserver-slot-uki.nix { inherit lib pkgs self; };
+  hostPlatformCheck = import ./tests/host-platform.nix { inherit lib pkgs self; };
+
+  actionlintCheck =
+    pkgs.runCommand "github-actions-workflows-check"
+      {
+        nativeBuildInputs = [ pkgs.actionlint ];
+      }
+      ''
+        cd ${pathFromRoot ".github/workflows"}
+        actionlint *.yml
+        touch "$out"
+      '';
+  nanoserverV4AssetSizeCheck =
+    let
+      bundle = self.packages.${pkgs.stdenv.hostPlatform.system}.nanoserver-01-update-v4-bundle;
+    in
+    pkgs.runCommand "nanoserver-v4-release-asset-size-check" { } ''
+      size=$(stat -c '%s' ${bundle}/nanoserver-store_4.tar.xz)
+      if (( size > 1900000000 )); then
+        echo "Nanoserver v4 store archive exceeds the 1.9 GB GitHub Release budget: $size bytes" >&2
+        exit 1
+      fi
+      touch "$out"
+    '';
   nanoserverDiskoTests = lib.optionalAttrs pkgs.stdenv.hostPlatform.isx86_64 {
     nanoserver-01-disko-layout = import ./tests/nanoserver-disko-layout.nix {
       inherit
@@ -148,6 +172,9 @@ nixosChecks
     ;
 
   nanoserver-01-slot-uki = nanoserverSlotUkiCheck;
+  workflow-lint = actionlintCheck;
+  host-platform = hostPlatformCheck;
+  nanoserver-v4-asset-size = nanoserverV4AssetSizeCheck;
 
   # All checks combined
   all =
@@ -163,6 +190,9 @@ nixosChecks
             featureStructureCheck
             passwordlessSudoCheck
             nanoserverSlotUkiCheck
+            hostPlatformCheck
+            actionlintCheck
+            nanoserverV4AssetSizeCheck
           ]
           ++ builtins.attrValues nanoserverDiskoTests
           ++ builtins.attrValues miniserverDiskoTests;

@@ -93,6 +93,7 @@
       url = "github:RogerNavelsaker/nix-secrets";
       flake = false;
     };
+
   };
 
   outputs =

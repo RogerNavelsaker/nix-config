@@ -1,6 +1,6 @@
 # Appliance Updates
 
-Appliance update bundles are built from Nix flake package outputs named `*-update-bundle`. After the `CI & Cache Build` workflow succeeds for a push to `main`, `Publish appliance update` builds every such bundle from that exact commit, merges the versioned files into one release manifest, signs `SHA256SUMS`, and publishes a GitHub Release tagged `appliance-release-<commit-sha>`. The repository is public, so appliances download release assets without a GitHub token. The release workflow skips publication until its signing secret is configured; after setting it, dispatch that workflow on `main` to publish the current commit.
+CI builds the existing Nanoserver bundle and candidate versioned bundle for validation. Publication is a separate manual `workflow_dispatch` on `main`, after CI passes. The publisher signs a `SHA256SUMS` manifest and creates a GitHub Release tagged `appliance-release-<commit-sha>`. Existing v2/v3 release assets are neither rebuilt nor copied into the new release. The repository is public, so appliances download release assets without a GitHub token. Publication is skipped until its signing secret is configured.
 
 ## One-time signing setup
 
@@ -17,13 +17,13 @@ The export is unencrypted and must be treated as a CI signing credential. Keep i
 
 ## Publish a release
 
-Every successful push to `main` triggers publication from the exact tested commit. The workflow validates the flake, discovers all `*-update-bundle` package outputs, builds and combines them, creates a binary-mode SHA-256 manifest, signs it with the CI key, and publishes the signed manifest and payload files. The release becomes the `latest` release used by appliances. A workflow-dispatch run on `main` can publish the current commit after the signing secret is configured. Release tags are commit-specific and must not be reused. Bundle filenames must be unique across appliance hosts; version numbers are carried in each filename and are independently selected by each host's `MatchPattern`.
+After CI succeeds on `main`, an operator dispatches the publisher for that exact commit. It is currently allowlisted to `nanoserver-01-update-v4-bundle`; it does not publish the default v3 bundle or historical rollback assets. It creates a binary-mode SHA-256 manifest, signs it with the CI key, and publishes the v4 payload files. The release becomes the `latest` release used by appliances, and its manifest lists only that new version's assets. Historical releases remain available in GitHub Release history. The workflow rejects any payload filename already present in a release, so a new image version must use new versioned filenames. Release tags are commit-specific and must not be reused.
 
 The initial published release contained the Nanoserver v2 bundle and verified the publishing path, but it was not a newer update for a host already running v2. Release `appliance-release-b6931964ed72274e6f25110095e41f46698d1d4e` contains the signed v3 bundle. It was deployed to `nanoserver-01` after explicit authorization; v3 slot A is active and v2 remains installed for rollback.
 
 ## Poll, stage, and activate
 
-With the appliance configuration deployed, `systemd-sysupdate.timer` checks the latest release daily (with a randomized delay) and stages newer matching resources. Remote files are checked against `SHA256SUMS`; `SHA256SUMS.gpg` is verified using `/etc/systemd/import-pubring.gpg`. The transfer set includes the store tarball, its registration metadata, and both slot-specific UKIs. Transfers protect the running version and retain the two most recent instances. Polling does not automatically reboot.
+The running v3 host's generic `systemd-sysupdate.service` currently fails with “No transfer definitions found”; do not rely on its timer to stage this update. The explicit `nanoserver` component path can list versions and verify the signed manifest. Use the guarded `appliance-update <new-version>` wrapper below; it runs the component-specific updater, checks the mirrored root and mounts, and requires confirmation. No update is staged automatically.
 
 To explicitly select a staged version for the next boot, run:
 
@@ -33,4 +33,4 @@ sudo appliance-update <new-version>
 
 The command rechecks the mirrored root devices and mounts, requests confirmation, runs `systemd-sysupdate` for the requested version, and sets a one-shot boot entry on the currently active ESP. Reboot separately during an approved window. Keep the previous version available until the new boot passes its health gate; boot counting and the other slot provide the recovery path.
 
-CI publishing does not itself deploy or activate an update; the v3 deployment was performed separately after explicit authorization. Systemd 259 currently logs unsupported `Verify=` source keys but verifies the signed manifest by default with the configured keyring. Remove those keys before the next image-version bump. Keep release contents immutable per per-host numeric version; future deployment or reboot still requires explicit authorization.
+CI and release publication do not themselves deploy or activate an update. The v4 transfer definitions omit unsupported systemd-sysupdate `Verify=` keys; signed-manifest verification remains enabled through the configured keyring. Keep each published per-host numeric version immutable. Staging and rebooting are separate operations; reboot only after staging succeeds and within the approved rollout window.
