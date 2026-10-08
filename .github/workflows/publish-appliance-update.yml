@@ -1,10 +1,6 @@
 name: Publish appliance update
 
 on:
-  workflow_run:
-    workflows: ["CI & Cache Build"]
-    types: [completed]
-    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -16,17 +12,12 @@ concurrency:
 
 jobs:
   publish:
-    if: >-
-      (github.event_name == 'workflow_run' &&
-       github.event.workflow_run.conclusion == 'success' &&
-       github.event.workflow_run.event == 'push' &&
-       github.event.workflow_run.head_branch == 'main') ||
-      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          ref: ${{ github.sha }}
           persist-credentials: false
 
       - name: Check signing secret is configured
@@ -60,6 +51,7 @@ jobs:
         run: >-
           nix build
           .#checks.x86_64-linux.nanoserver-01-slot-uki
+          .#checks.x86_64-linux.nanoserver-v4-asset-size
           --no-link --accept-flake-config
 
       - name: Build and assemble appliance bundles
@@ -122,12 +114,31 @@ jobs:
             --output "${{ steps.bundles.outputs.stage }}/SHA256SUMS.gpg" \
             "${{ steps.bundles.outputs.stage }}/SHA256SUMS"
 
-      - name: Check main is still at the tested commit
+      - name: Refuse previously published asset filenames
+        if: steps.readiness.outputs.enabled == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STAGE: ${{ steps.bundles.outputs.stage }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          existing_assets=$(gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100" --paginate --jq '.[].assets[].name')
+          while IFS= read -r name; do
+            case "$name" in
+              SHA256SUMS|SHA256SUMS.gpg) continue ;;
+            esac
+            if printf '%s\n' "$existing_assets" | grep -Fxq "$name"; then
+              echo "Refusing to republish immutable asset $name; bump the per-host version." >&2
+              exit 1
+            fi
+          done < <(find "$STAGE" -maxdepth 1 -type f -printf '%f\n')
+
+      - name: Check main is still at the dispatched commit
         id: freshness
         if: steps.readiness.outputs.enabled == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-          HEAD_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+          HEAD_SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
           current_main=$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)
@@ -135,14 +146,14 @@ jobs:
             echo "current=true" >> "$GITHUB_OUTPUT"
           else
             echo "current=false" >> "$GITHUB_OUTPUT"
-            echo "Skipping stale CI result $HEAD_SHA; main is now $current_main."
+            echo "Skipping stale release request $HEAD_SHA; main is now $current_main."
           fi
 
       - name: Publish signed release assets
         if: steps.readiness.outputs.enabled == 'true' && steps.freshness.outputs.current == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-          HEAD_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+          HEAD_SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
           tag="appliance-release-$HEAD_SHA"
