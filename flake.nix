@@ -158,93 +158,95 @@
       );
 
       # NixOS configurations
-      nixosConfigurations = lib.mkSystems (
-        (import ./hosts/nanoserver-01/configurations.nix { inherit inputs self; })
-        // (import ./hosts/miniserver-configurations.nix { inherit inputs self; })
-        // {
-          iso = {
-            hostname = "iso";
-            users = [ "rona" ];
+      nixosConfigurations =
+        lib.mkSystems (
+          (import ./hosts/nanoserver-01/configurations.nix { inherit inputs self; })
+          // (import ./hosts/miniserver-configurations.nix { inherit inputs self; })
+          // {
+            iso = {
+              hostname = "iso";
+              users = [ "rona" ];
+              system = "x86_64-linux";
+              stateVersion = "25.11";
+              # Keep the rescue/installer image independent of the full Home Manager environment.
+              standaloneHM = true;
+              extraModules = [
+                {
+                  rescueIso.yubikeyUnlockTimeoutSeconds = 180;
+                }
+              ];
+              secrets = inputs.nix-secrets;
+              features = {
+                opt-in = [ "wifi/NaCo" ];
+              };
+              # User features for integrated HM mode
+              userFeatures = {
+                opt-out = [
+                  "git"
+                  "direnv"
+                  "ssh"
+                ];
+              };
+            };
+          }
+        )
+        // lib.mkVessels {
+          stateVersion = "25.11";
+          users = [ ];
+          nixpkgs = inputs.nixpkgs-stable;
+          home-manager = inputs.home-manager-stable;
+          extraModules = [ ./hosts/features/opt-in/openbao-client/openbao-client.nix ];
+        };
+
+      # Home Manager configurations
+      homeConfigurations =
+        lib.mkHomes {
+          "rona@nanoserver-01" = {
+            username = "rona";
+            hostname = "nanoserver-01";
             system = "x86_64-linux";
             stateVersion = "25.11";
-            # Keep the rescue/installer image independent of the full Home Manager environment.
-            standaloneHM = true;
-            extraModules = [
-              {
-                rescueIso.yubikeyUnlockTimeoutSeconds = 180;
-              }
-            ];
-            secrets = inputs.nix-secrets;
+            #secrets = inputs.nix-secrets;
             features = {
-              opt-in = [ "wifi/NaCo" ];
+              # opt-in = [ "desktop" "development" ];
             };
-            # User features for integrated HM mode
-            userFeatures = {
-              opt-out = [
-                "git"
-                "direnv"
-                "ssh"
+          };
+
+          # Arch Linux standalone Home Manager
+          "rona@aio" = {
+            username = "rona";
+            hostname = "aio";
+            system = "x86_64-linux";
+            stateVersion = "25.11";
+            features = {
+              opt-in = [
+                "autofirma"
+                "beeper"
+                "bitwarden"
+                "claude-code"
+                "firefox"
+                "goose"
+                "nixgl" # GPU wrapper for non-NixOS
+                "plasma"
+                "tailscale"
+                "terminals"
+                "theming" # GTK/Qt theme management
+                "vscode"
+                "yazi"
+                "yubikey"
               ];
             };
           };
         }
-      )
-      // lib.mkVessels {
-        stateVersion = "25.11";
-        users = [ ];
-        nixpkgs = inputs.nixpkgs-stable;
-        home-manager = inputs.home-manager-stable;
-        extraModules = [ ./hosts/features/opt-in/openbao-client/openbao-client.nix ];
-      };
-
-      # Home Manager configurations
-      homeConfigurations = lib.mkHomes {
-        "rona@nanoserver-01" = {
-          username = "rona";
-          hostname = "nanoserver-01";
-          system = "x86_64-linux";
+        // lib.mkClankers {
           stateVersion = "25.11";
-          #secrets = inputs.nix-secrets;
-          features = {
-            # opt-in = [ "desktop" "development" ];
-          };
+          nixpkgs = inputs.nixpkgs-stable;
+          home-manager = inputs.home-manager-stable;
+          features.opt-out = [
+            "git"
+            "ssh"
+          ];
         };
-
-        # Arch Linux standalone Home Manager
-        "rona@aio" = {
-          username = "rona";
-          hostname = "aio";
-          system = "x86_64-linux";
-          stateVersion = "25.11";
-          features = {
-            opt-in = [
-              "autofirma"
-              "beeper"
-              "bitwarden"
-              "claude-code"
-              "firefox"
-              "goose"
-              "nixgl" # GPU wrapper for non-NixOS
-              "plasma"
-              "tailscale"
-              "terminals"
-              "theming" # GTK/Qt theme management
-              "vscode"
-              "yazi"
-              "yubikey"
-            ];
-          };
-        };
-      }
-      // lib.mkClankers {
-        stateVersion = "25.11";
-        nixpkgs = inputs.nixpkgs-stable;
-        home-manager = inputs.home-manager-stable;
-        features.opt-out = [
-          "git"
-          "ssh"
-        ];
-      };
 
       # Apps for easy activation (generated from homeConfigurations)
       apps = lib.forEachSystem (
