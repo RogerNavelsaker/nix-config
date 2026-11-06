@@ -23,6 +23,7 @@ if grep -Eq 'url = "path:' flake.nix; then
 fi
 
 nix flake metadata --json >/dev/null
+nix flake check --no-build
 
 home_configurations="$(nix eval --json --apply builtins.attrNames .#homeConfigurations)"
 if [[ "$home_configurations" == *'"rona@aio"'* || "$home_configurations" == *'"rona@roger-aio"'* ]]; then
