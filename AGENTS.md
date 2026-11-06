@@ -95,3 +95,10 @@ This is a Nix repository. For AI assistants with MCP support:
 - `sequentialthinking` - Complex reasoning
 
 `.mcp.json` is gitignored - each user configures their own.
+## Agent delivery and Nix inputs
+
+- Before committing or pushing, inspect `git status --short` and the staged diff; commit only task-owned files and preserve all pre-existing changes.
+- For coding changes, run `scripts/local-gate.sh` before commit/push. A focused change in another repository also requires that repository's relevant tests and formatter.
+- Push task commits to the current task branch. If the current branch contains unrelated commits or is protected, create a task branch from the appropriate remote base and push that branch. Use ordinary pushes; preserve shared history.
+- Use published remote Flake inputs with locked revisions. Commit and push shared dependency changes first, then update consumer inputs to the remote commit and refresh `flake.lock`. Keep local `path:/workspace/...` inputs out of committed `flake.nix` files.
+- Report commit IDs, pushed branches, exact gate commands/results, and unresolved risks.

@@ -18,10 +18,17 @@ let
     inputs = builtins.mapAttrs (
       _: flake:
       let
-        legacyPackages = (flake.legacyPackages or { }).${final.stdenv.hostPlatform.system} or { };
-        packages = (flake.packages or { }).${final.stdenv.hostPlatform.system} or { };
+        system = final.stdenv.hostPlatform.system;
+        legacyPackages = (flake.legacyPackages or { }).${system} or { };
+        packageSets = (flake.packageSets or { }).${system} or { };
+        packages = (flake.packages or { }).${system} or { };
       in
-      if legacyPackages != { } then legacyPackages else packages
+      if legacyPackages != { } then
+        legacyPackages
+      else if packageSets != { } then
+        packageSets
+      else
+        packages
     ) inputs;
   };
 

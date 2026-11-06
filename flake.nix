@@ -22,10 +22,20 @@
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
     nixpkgs-master.url = "github:NixOS/nixpkgs/master";
 
+    nixpkgs-packages = {
+      url = "github:RogerNavelsaker/nixpkgs";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    headroom = {
+      url = "github:RogerNavelsaker/nixpkg-headroom/cd05717263cff0bbf20cb0c259831e2827d4c4a9";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
+    };
+
     systems.url = "github:nix-systems/default-linux";
 
     nix-lib = {
-      url = "github:RogerNavelsaker/nix-lib";
+      url = "github:RogerNavelsaker/nix-lib/d8ccc7ff9ace64a339186cb53a9b1ee54f217abd";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.systems.follows = "systems";
     };
@@ -35,12 +45,20 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    home-manager-stable = {
+      url = "github:nix-community/home-manager/release-25.11";
+      inputs.nixpkgs.follows = "nixpkgs-stable";
+    };
+
+    devenv.url = "github:cachix/devenv/v2.4.0";
+
     sops-nix = {
       url = "github:mic92/sops-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
     impermanence.url = "github:nix-community/impermanence/home-manager-v1";
+    herdr.url = "github:herdrdev/herdr/v0.9.3";
     hardware.url = "github:NixOS/nixos-hardware";
 
     disko = {
@@ -170,7 +188,14 @@
             };
           };
         }
-      );
+      )
+      // lib.mkVessels {
+        stateVersion = "25.11";
+        users = [ ];
+        nixpkgs = inputs.nixpkgs-stable;
+        home-manager = inputs.home-manager-stable;
+        extraModules = [ ./hosts/features/opt-in/openbao-client/openbao-client.nix ];
+      };
 
       # Home Manager configurations
       homeConfigurations = lib.mkHomes {
@@ -210,6 +235,15 @@
             ];
           };
         };
+      }
+      // lib.mkClankers {
+        stateVersion = "25.11";
+        nixpkgs = inputs.nixpkgs-stable;
+        home-manager = inputs.home-manager-stable;
+        features.opt-out = [
+          "git"
+          "ssh"
+        ];
       };
 
       # Apps for easy activation (generated from homeConfigurations)
