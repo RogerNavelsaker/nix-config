@@ -240,8 +240,6 @@
         }
         // lib.mkClankers {
           stateVersion = "25.11";
-          nixpkgs = inputs.nixpkgs-stable;
-          home-manager = inputs.home-manager-stable;
           features.opt-out = [
             "git"
             "ssh"
