@@ -22,6 +22,8 @@ if grep -Eq 'url = "path:' flake.nix; then
   exit 1
 fi
 
+# The full flake check reaches unrelated legacy rona@aio and fails on its invalid Autofirma drv.
+# Evaluate these generated agent outputs directly instead.
 nix flake metadata --json >/dev/null
 
 for agent in rowan jules mira avery; do
