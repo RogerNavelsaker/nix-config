@@ -17,13 +17,22 @@ nix run nixpkgs#nixfmt-rfc-style -- --check \
   clankers/mira/default.nix \
   clankers/avery/default.nix
 
-nix flake check --no-build
+if grep -Eq 'url = "path:' flake.nix; then
+  printf 'flake.nix must use locked remote inputs.\n' >&2
+  exit 1
+fi
+
+nix flake metadata --json >/dev/null
 
 for agent in rowan jules mira avery; do
   host_name="$(nix eval --raw ".#nixosConfigurations.$agent.config.networking.hostName")"
   test "$host_name" = "agent-$agent"
-  nix eval --raw ".#nixosConfigurations.$agent.config.system.build.image.drvPath" >/dev/null
-  nix eval --raw ".#homeConfigurations.$agent@agent-$agent.activationPackage.drvPath" >/dev/null
+
+  image_drv="$(nix eval --raw ".#nixosConfigurations.$agent.config.system.build.image.drvPath")"
+  [[ "$image_drv" == /nix/store/*.drv ]]
+
+  home_drv="$(nix eval --raw ".#homeConfigurations.$agent@agent-$agent.activationPackage.drvPath")"
+  [[ "$home_drv" == /nix/store/*.drv ]]
 done
 
 git diff --check
