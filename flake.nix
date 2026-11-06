@@ -212,31 +212,7 @@
             };
           };
 
-          # Arch Linux standalone Home Manager
-          "rona@aio" = {
-            username = "rona";
-            hostname = "aio";
-            system = "x86_64-linux";
-            stateVersion = "25.11";
-            features = {
-              opt-in = [
-                "autofirma"
-                "beeper"
-                "bitwarden"
-                "claude-code"
-                "firefox"
-                "goose"
-                "nixgl" # GPU wrapper for non-NixOS
-                "plasma"
-                "tailscale"
-                "terminals"
-                "theming" # GTK/Qt theme management
-                "vscode"
-                "yazi"
-                "yubikey"
-              ];
-            };
-          };
+          # Defer the CachyOS Roger-AIO NixOS and Home Manager outputs until migration.
         }
         // lib.mkClankers {
           stateVersion = "25.11";
@@ -247,12 +223,6 @@
         };
 
       # Apps for easy activation (generated from homeConfigurations)
-      apps = lib.forEachSystem (
-        _:
-        lib.mkHomeApps {
-          inherit self;
-          default = "rona@aio";
-        }
-      );
+      apps = lib.forEachSystem (_: lib.mkHomeApps { inherit self; });
     };
 }

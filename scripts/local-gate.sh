@@ -22,9 +22,19 @@ if grep -Eq 'url = "path:' flake.nix; then
   exit 1
 fi
 
-# The full flake check reaches unrelated legacy rona@aio and fails on its invalid Autofirma drv.
-# Evaluate these generated agent outputs directly instead.
 nix flake metadata --json >/dev/null
+
+home_configurations="$(nix eval --json --apply builtins.attrNames .#homeConfigurations)"
+if [[ "$home_configurations" == *'"rona@aio"'* || "$home_configurations" == *'"rona@roger-aio"'* ]]; then
+  printf 'Roger-AIO Home Manager output must remain deferred until the CachyOS-to-NixOS migration.\n' >&2
+  exit 1
+fi
+
+nixos_configurations="$(nix eval --json --apply builtins.attrNames .#nixosConfigurations)"
+if [[ "$nixos_configurations" == *'"roger-aio"'* ]]; then
+  printf 'Roger-AIO NixOS output must remain deferred until the CachyOS-to-NixOS migration.\n' >&2
+  exit 1
+fi
 
 for agent in rowan jules mira avery; do
   host_name="$(nix eval --raw ".#nixosConfigurations.$agent.config.networking.hostName")"
