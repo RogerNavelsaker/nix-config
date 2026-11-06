@@ -681,6 +681,22 @@
         "type": "github"
       }
     },
+    "flake-compat_5": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1767039857,
+        "narHash": "sha256-vNpUSpF5Nuw8xvDLj2KCwwksIbjua2LZCqhV1LNRDns=",
+        "owner": "edolstra",
+        "repo": "flake-compat",
+        "rev": "5edf11c44bc78a0d334f6334cdaf7d60d732daab",
+        "type": "github"
+      },
+      "original": {
+        "owner": "edolstra",
+        "repo": "flake-compat",
+        "type": "github"
+      }
+    },
     "flake-parts": {
       "inputs": {
         "nixpkgs-lib": [
@@ -1431,6 +1447,27 @@
         "type": "github"
       }
     },
+    "home-manager-mara": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs-mara"
+        ]
+      },
+      "locked": {
+        "lastModified": 1792818383,
+        "narHash": "sha256-199i7ubVSXTMl+0AAlL7cVCXSjcI+jWByMcimYjeMX0=",
+        "owner": "nix-community",
+        "repo": "home-manager",
+        "rev": "24f2190587513b9c2f73db112a17844ae912d965",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "ref": "release-26.05",
+        "repo": "home-manager",
+        "type": "github"
+      }
+    },
     "home-manager-stable": {
       "inputs": {
         "nixpkgs": [
@@ -1667,17 +1704,17 @@
         ]
       },
       "locked": {
-        "lastModified": 1793965444,
-        "narHash": "sha256-8B5o+J6EJgSmClUF1Um4L0jSjOryIYfc+buypr+ZrqE=",
+        "lastModified": 1793972959,
+        "narHash": "sha256-C+q5KtQitCHrlAfI4YS1/ALZpnThjUhWzHBwXolCGWE=",
         "owner": "RogerNavelsaker",
         "repo": "nix-lib",
-        "rev": "d8ccc7ff9ace64a339186cb53a9b1ee54f217abd",
+        "rev": "c00fe8410300c9fb6abe7aa0af04cbb02823bc96",
         "type": "github"
       },
       "original": {
         "owner": "RogerNavelsaker",
         "repo": "nix-lib",
-        "rev": "d8ccc7ff9ace64a339186cb53a9b1ee54f217abd",
+        "rev": "c00fe8410300c9fb6abe7aa0af04cbb02823bc96",
         "type": "github"
       }
     },
@@ -1788,6 +1825,28 @@
       "original": {
         "owner": "nix-community",
         "repo": "nixGL",
+        "type": "github"
+      }
+    },
+    "nixos-wsl": {
+      "inputs": {
+        "flake-compat": "flake-compat_4",
+        "nixpkgs": [
+          "nixpkgs-mara"
+        ]
+      },
+      "locked": {
+        "lastModified": 1789164534,
+        "narHash": "sha256-DoYGPM6QpnYBLWj9gGw6ZwAzIX+HrAVov1BoT+8Jixo=",
+        "owner": "nix-community",
+        "repo": "NixOS-WSL",
+        "rev": "72c92b11bb8289e6651c7fef29cc0a885fd6a255",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "repo": "NixOS-WSL",
+        "rev": "72c92b11bb8289e6651c7fef29cc0a885fd6a255",
         "type": "github"
       }
     },
@@ -3487,6 +3546,22 @@
         "type": "github"
       }
     },
+    "nixpkgs-mara": {
+      "locked": {
+        "lastModified": 1793865203,
+        "narHash": "sha256-/cpdPHaySDIyCgZI6EWngiM6jK3YLUNzv1b7lTzy6Bk=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "c56a87d8e41ce69bd2af57eb35dcc117a9dfca33",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-26.05",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
     "nixpkgs-master": {
       "locked": {
         "lastModified": 1774126242,
@@ -3832,7 +3907,7 @@
     },
     "pog": {
       "inputs": {
-        "flake-compat": "flake-compat_4",
+        "flake-compat": "flake-compat_5",
         "flake-utils": "flake-utils_10",
         "nixpkgs": [
           "nixpkgs"
@@ -4027,6 +4102,7 @@
         "headroom": "headroom",
         "herdr": "herdr",
         "home-manager": "home-manager_2",
+        "home-manager-mara": "home-manager-mara",
         "home-manager-stable": "home-manager-stable",
         "impermanence": "impermanence",
         "llm-agents": "llm-agents",
@@ -4034,7 +4110,9 @@
         "nix-secrets": "nix-secrets",
         "nix-vscode-extensions": "nix-vscode-extensions",
         "nixgl": "nixgl",
+        "nixos-wsl": "nixos-wsl",
         "nixpkgs": "nixpkgs_6",
+        "nixpkgs-mara": "nixpkgs-mara",
         "nixpkgs-master": "nixpkgs-master",
         "nixpkgs-packages": "nixpkgs-packages",
         "nixpkgs-stable": "nixpkgs-stable",

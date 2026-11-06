@@ -12,10 +12,14 @@ nix run nixpkgs#nixfmt-rfc-style -- --check \
   vessels/jules/default.nix \
   vessels/mira/default.nix \
   vessels/avery/default.nix \
+  vessels/mara/default.nix \
+  vessels/mara/resource.nix \
   clankers/rowan/default.nix \
   clankers/jules/default.nix \
   clankers/mira/default.nix \
-  clankers/avery/default.nix
+  clankers/avery/default.nix \
+  clankers/mara/default.nix \
+  clankers/mara/resource.nix
 
 if grep -Eq 'url = "path:' flake.nix; then
   printf 'flake.nix must use locked remote inputs.\n' >&2
@@ -47,5 +51,14 @@ for agent in rowan jules mira avery; do
   home_drv="$(nix eval --raw ".#homeConfigurations.$agent@agent-$agent.activationPackage.drvPath")"
   [[ "$home_drv" == /nix/store/*.drv ]]
 done
+
+mara_host_name="$(nix eval --raw .#nixosConfigurations.mara.config.networking.hostName)"
+test "$mara_host_name" = "agent-mara"
+test "$(nix eval --raw .#nixosConfigurations.mara.config.system.stateVersion)" = "26.05"
+test "$(nix eval --json .#nixosConfigurations.mara.config.wsl.enable)" = "true"
+mara_system_drv="$(nix eval --raw .#nixosConfigurations.mara.config.system.build.toplevel.drvPath)"
+[[ "$mara_system_drv" == /nix/store/*.drv ]]
+mara_home_drv="$(nix eval --raw .#homeConfigurations.mara@agent-mara.activationPackage.drvPath)"
+[[ "$mara_home_drv" == /nix/store/*.drv ]]
 
 git diff --check

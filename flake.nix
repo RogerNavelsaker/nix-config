@@ -21,7 +21,7 @@
     nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-25.11";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
     nixpkgs-master.url = "github:NixOS/nixpkgs/master";
-
+    nixpkgs-mara.url = "github:NixOS/nixpkgs/nixos-26.05";
     nixpkgs-packages = {
       url = "github:RogerNavelsaker/nixpkgs";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -35,7 +35,7 @@
     systems.url = "github:nix-systems/default-linux";
 
     nix-lib = {
-      url = "github:RogerNavelsaker/nix-lib/d8ccc7ff9ace64a339186cb53a9b1ee54f217abd";
+      url = "github:RogerNavelsaker/nix-lib/c00fe8410300c9fb6abe7aa0af04cbb02823bc96";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.systems.follows = "systems";
     };
@@ -48,6 +48,16 @@
     home-manager-stable = {
       url = "github:nix-community/home-manager/release-25.11";
       inputs.nixpkgs.follows = "nixpkgs-stable";
+    };
+
+    home-manager-mara = {
+      url = "github:nix-community/home-manager/release-26.05";
+      inputs.nixpkgs.follows = "nixpkgs-mara";
+    };
+
+    nixos-wsl = {
+      url = "github:nix-community/NixOS-WSL/72c92b11bb8289e6651c7fef29cc0a885fd6a255";
+      inputs.nixpkgs.follows = "nixpkgs-mara";
     };
 
     devenv.url = "github:cachix/devenv/v2.4.0";
