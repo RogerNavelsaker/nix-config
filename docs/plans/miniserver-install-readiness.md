@@ -1,6 +1,7 @@
 # Miniserver install readiness
 
-Status: miniserver profiles and one-pass disposable-QEMU Disko layout checks are complete. Pinned nix-lib reproducibility and disposable-QEMU `nixos-anywhere --extra-files` key-transfer validation remain blocked. No physical Disko or `nixos-anywhere` operation has been run.
+Status: miniserver profiles, disposable-QEMU Disko layout checks, and end-to-end disposable host-key transfer are complete. Nanoserver v4-root boot/recovery also passes in QEMU. Remaining: refresh each target’s identity/device inventory immediately before installation and obtain separate explicit authorization for destructive physical installation. No physical Disko or `nixos-anywhere` operation has been run.
+Compatibility note: the lock pins published nix-lib commit `c00fe8410300c9fb6abe7aa0af04cbb02823bc96`; the miniserver slot-B NixOS toplevel evaluates successfully against it, confirming the required `nix-lib.impermanence` helpers are available. Preserve the remote lock pin.
 
 ## Evidence
 
@@ -32,14 +33,14 @@ Status: miniserver profiles and one-pass disposable-QEMU Disko layout checks are
 - Added `hosts/miniserver-01`, `-02`, and `-03` profiles with sanitized per-host Facter reports, shared wired appliance modules, stable by-path device paths, and distinct newly generated PARTUUID/filesystem UUIDs. Reports were recursively stripped of fields whose keys match serial, WWN, MAC, or UUID; the stripped reports were verified before copying, and rescue `/run` copies were removed.
 - Each configuration has slot-A and slot-B variants so the initial slot-A closure includes the peer UKI and the slot-B system closure.
 - Added one disposable NixOS VM Disko format/mount test per miniserver. All three tests pass with 16 GiB virtual disks and verify the two-member Btrfs root and persistence RAID1 filesystems. The test deliberately runs one format+mount cycle; the upstream `makeDiskoTest` repeat-destroy cycle currently fails because its `umount -R /mnt` does not detach nested target mounts when `/mnt` is not itself mounted. Do not interpret that repeatability failure as a physical-media failure; track/fix the harness behavior separately before claiming repeated destroy/mount idempotence.
-- All six host/slot system derivations evaluate when overriding nix-lib to the local worktree. Without the override, evaluation fails because the pinned nix-lib revision does not provide `nix-lib.impermanence`, which the existing dirty nix-config appliance modules call. Do not update the nix-config lock until the owning nix-lib change is published through the cross-repo sync chain.
+- All six miniserver slot-A/slot-B system toplevel derivations built successfully with the locked remote nix-lib input `c00fe8410300c9fb6abe7aa0af04cbb02823bc96`; its `nix-lib.impermanence` helpers evaluate successfully. Preserve this remote pin for reproducibility.
 - Git flake source excludes ordinary untracked files. Intent-to-add was used on relevant Nanoserver/appliance and miniserver source/test paths; contents remain unstaged. Generated `.devenv/` files and `devenv.lock` remain untouched.
 
-The QEMU tests format only disposable VM disks. They do not run Disko on the physical miniserver targets and do not test `nixos-anywhere --extra-files` or stable-key fingerprint installation. Upstream `nixos-anywhere` currently rejects `--vm-test` combined with `--extra-files` (`runVmTest` explicitly exits), so this key-transfer acceptance gate requires a separate disposable target VM and an actual `nixos-anywhere` install-phase run; the layout VM check alone cannot prove it.
+- End-to-end disposable host-key transfer passed using a temporary adapted copy of the upstream `nixos-anywhere` `from-nixos` QEMU test. The installer VM generated an Ed25519 key under `/run/extra-files/etc/ssh/ssh_host_ed25519_key` (mode `0600`), invoked the full kexec/Disko/install flow with `--extra-files` and without `--copy-host-keys`, rebooted the disposable target disk, and verified the installed key fingerprint matched the staged public key. The installer removed `/run/extra-files` after install; VM teardown removed the disposable key. No private key was written to the host store or logs. The check completed successfully in about 125 seconds. This validates the transfer mechanism, not the Nanoserver v4 boot/recovery path.
 
 ## Current stop condition
 
-The miniserver profile and Disko QEMU gates are now complete, but pinned nix-lib reproducibility and end-to-end disposable-QEMU validation of `nixos-anywhere --extra-files` with a disposable key remain outstanding. Do not run Disko or `nixos-anywhere` against physical hosts until those gates pass and an operator immediately reidentifies each target. Earlier executable `EIO` observations may have resulted from detached rescue media and are not, by themselves, evidence of hardware failure.
+The miniserver profile, Disko QEMU, host-key transfer, and Nanoserver v4-root boot/recovery gates are complete. The current remote nix-lib lock pin evaluates the miniserver profiles. Physical installation is still a separate destructive operation: immediately before each host, re-identify the host and stable device paths/sizes and exclude Ventoy; then proceed one host at a time only after explicit install authorization. No physical install has been run.
 
 ## Earlier Nanoserver baseline evaluation
 
