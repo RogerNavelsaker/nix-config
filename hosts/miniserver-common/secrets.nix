@@ -1,7 +1,9 @@
 { config, secrets, ... }:
 {
   sops.useSystemdActivation = true;
-  sops.age.sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
+  sops.age.sshKeyPaths = builtins.map (hostKey: hostKey.path) (
+    builtins.filter (hostKey: hostKey.type == "ed25519") config.services.openssh.hostKeys
+  );
 
   sops.secrets."ts-auth-key" = {
     sopsFile = secrets + "/hosts/${config.networking.hostName}/secrets.yaml";

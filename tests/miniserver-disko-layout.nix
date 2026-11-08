@@ -8,12 +8,19 @@
 }:
 let
   hostConfig = self.nixosConfigurations.${hostname}.config;
+  isMiniserver = lib.hasPrefix "miniserver-" hostname;
   rootPoolPath = hostConfig.appliance.update.rootPoolPath;
   storeSubvolume = "${hostConfig.appliance.storeName}_${hostConfig.appliance.rootVersion}";
+
+  hostKeyPaths = builtins.map (hostKey: hostKey.path) (
+    builtins.filter (hostKey: hostKey.type == "ed25519") hostConfig.services.openssh.hostKeys
+  );
   diskConfig = diskoLib.testLib.prepareDiskoConfig {
     disko.devices = hostConfig.disko.devices;
   } (builtins.tail diskoLib.testLib.devices);
 in
+assert !isMiniserver || hostKeyPaths == [ "/persist/etc/ssh/ssh_host_ed25519_key" ];
+assert !isMiniserver || hostConfig.sops.age.sshKeyPaths == hostKeyPaths;
 pkgs.testers.runNixOSTest {
   name = "${hostname}-disko-layout";
   nodes.machine = {
