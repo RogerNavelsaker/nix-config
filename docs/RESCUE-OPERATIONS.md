@@ -12,6 +12,14 @@ Use the central `nix-ops` command from `nix-repos`; it dispatches into each owni
 
 The encrypted auth key remains in `nix-secrets`; use `secret-status` or `sops filestatus` for metadata-only checks. Never print or pass the Tailnet key as a command argument.
 
+## Miniserver physical installation status
+
+The user explicitly authorized physical installation of the Miniserver appliances on 2026-11-09. The disposable-QEMU readiness gates have passed, including bootstrap installation/activation, SOPS decryption via the persisted test identity, final appliance staging, and first boot; the repository local gate also passed. No physical operation has been run under this authorization.
+
+Before operating on each host, use a fresh rescue session to confirm host identity and enumerate all live whole disks, stable by-path targets, sizes, and mounts. Match the live configured Disko target set exactly; exclude the Ventoy device and stop on any ambiguity or mismatch. Use the guarded `nix-ops install <host> rona@<current-rescue-endpoint>` workflow, which selects the Miniserver bootstrap configuration, checks the live targets and root-capable SSH, and requires the exact `WIPE <host>` confirmation. Never substitute remembered `/dev/nvme*` or `/dev/sd*` names or reuse an old inventory as pre-install proof. Install one host at a time and verify the installed appliance boots and recovery access works before moving to the next host.
+
+**Miniserver-01 exception:** a prior destructive installation attempt repartitioned its target disks but failed during activation; the host is not verified as installed or booted. Before any further write to miniserver-01, perform read-only assessment of its current state and determine whether recovery or reinstall is appropriate. Do not assume the disks are blank or treat this new authorization as evidence of a successful install.
+
 ## Destructive install gate
 
 Run from an interactive terminal in `nix-repos`, after reviewing the target:

@@ -1,6 +1,6 @@
 # Miniserver install readiness
 
-Status: miniserver profiles, disposable-QEMU Disko layout checks, and end-to-end disposable host-key transfer are complete. Nanoserver v4-root boot/recovery also passes in QEMU. Remaining: refresh each target’s identity/device inventory immediately before installation and obtain separate explicit authorization for destructive physical installation. No physical Disko or `nixos-anywhere` operation has been run.
+Status: miniserver profiles, disposable-QEMU Disko layout checks, end-to-end disposable host-key transfer, and the full temporary-bootstrap install/activation/final-appliance first-boot QEMU test are complete. `./scripts/local-gate.sh` also passes. The user explicitly authorized physical Miniserver installation on 2026-11-09. No physical operation has been run under this authorization. Before each host, freshly verify its identity, configured stable by-path devices and sizes, and Ventoy exclusion; install one host at a time and verify boot/recovery before proceeding. Miniserver-01 already underwent a failed destructive installation attempt; perform read-only assessment of its current state before deciding recovery or reinstall.
 Compatibility note: the lock pins published nix-lib commit `c00fe8410300c9fb6abe7aa0af04cbb02823bc96`; the miniserver slot-B NixOS toplevel evaluates successfully against it, confirming the required `nix-lib.impermanence` helpers are available. Preserve the remote lock pin.
 
 ## Evidence
@@ -12,7 +12,7 @@ Compatibility note: the lock pins published nix-lib commit `c00fe8410300c9fb6abe
 - Additional read-only `lsblk` inspection confirmed existing partitions on the target devices: the USB devices currently have F2FS partitions; NVMe devices have existing small EFI and large Btrfs partitions. Current PARTUUID/UUID values are existing-layout identifiers and are intentionally not captured here or reused. This corroborates that every future Disko profile must explicitly replace existing layouts and receive newly generated, unique IDs.
 - The existing multihost plan assigns the two USBs to appliance A/B store slots and the NVMe pair to mirrored `/persist` plus 8 GiB swap on each. It explicitly excludes the separate 4 TB Ventoy disk from every Disko target. Confirm this role mapping and exact target identity live immediately before any future destructive command.
 - Nanoserver-01 has different hardware and has user-reported appliance QEMU success. That does not validate miniserver layouts or the install transfer path.
-- The user authorizes replacing old Proxmox data on miniserver hosts. This is not authorization to act on an ambiguous target.
+- The user explicitly authorized physical Miniserver installation on 2026-11-09. Earlier permission to replace the old Proxmox data was not itself install authorization. The current authorization still does not permit acting on ambiguous targets: re-identify each host and all live target devices immediately before installation, exclude Ventoy, and follow the one-host-at-a-time safeguards.
 
 ## Profile authoring notes
 
@@ -40,7 +40,7 @@ Compatibility note: the lock pins published nix-lib commit `c00fe8410300c9fb6abe
 
 ## Current stop condition
 
-The miniserver profile, Disko QEMU, host-key transfer, and Nanoserver v4-root boot/recovery gates are complete. The current remote nix-lib lock pin evaluates the miniserver profiles. Physical installation is still a separate destructive operation: immediately before each host, re-identify the host and stable device paths/sizes and exclude Ventoy; then proceed one host at a time only after explicit install authorization. No physical install has been run.
+The miniserver profile, Disko QEMU, host-key transfer, bootstrap install/activation, SOPS identity, final-appliance staging, and final first-boot QEMU gates are complete; `./scripts/local-gate.sh` passed. The user has explicitly authorized physical Miniserver installation. This authorization does not waive immediate live verification of each host and all configured target device paths/sizes, exclusion of Ventoy, or the guarded `nix-ops install` confirmation. Operate one host at a time and verify boot/recovery before proceeding. Miniserver-01 had a prior destructive attempt that failed after repartitioning; inspect its current state read-only before deciding whether recovery or reinstall is appropriate. No new physical operation has been run under the current authorization.
 
 ## Earlier Nanoserver baseline evaluation
 
