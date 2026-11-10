@@ -29,6 +29,12 @@ fi
 nix flake metadata --json >/dev/null
 nix flake check --no-build
 
+# Keep the destructive rescue installer’s phase ordering and fail-closed cleanup under test.
+fish --no-execute scripts/install-rescue-host.fish
+fish_indent --check scripts/install-rescue-host.fish
+bash -n tests/install-rescue-host-orchestration.sh
+./tests/install-rescue-host-orchestration.sh
+
 home_configurations="$(nix eval --json --apply builtins.attrNames .#homeConfigurations)"
 if [[ "$home_configurations" == *'"rona@aio"'* || "$home_configurations" == *'"rona@roger-aio"'* ]]; then
   printf 'Roger-AIO Home Manager output must remain deferred until the CachyOS-to-NixOS migration.\n' >&2
