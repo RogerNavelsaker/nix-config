@@ -137,19 +137,51 @@ pkgs.testers.runNixOSTest {
       machine.succeed("${lib.getExe nodes.machine.system.build.format}")
       machine.succeed("${lib.getExe nodes.machine.system.build.mount}")
 
-      # Reproduce nixos-anywhere 1.13.0's SSH remote-store closure transfer into /mnt.
+      # Reproduce nixos-anywhere 1.13.0's SSH remote-store transfer into /mnt.
       machine.succeed('mkdir -p /root/.ssh && chmod 0700 /root/.ssh && ssh-keygen -q -t ed25519 -N "" -f /run/nix-copy-key && cat /run/nix-copy-key.pub >> /root/.ssh/authorized_keys && chmod 0600 /root/.ssh/authorized_keys')
-      machine.succeed('NIX_SSHOPTS="-i /run/nix-copy-key -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" nix --extra-experimental-features nix-command copy --to "ssh://root@localhost?remote-store=local%3Froot=%2Fmnt" ${bootstrapToplevel}')
+      copy_bootstrap_closure = 'NIX_SSHOPTS="-i /run/nix-copy-key -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" nix --extra-experimental-features nix-command copy --to "ssh://root@localhost?remote-store=local%3Froot=%2Fmnt" ${bootstrapToplevel}'
+      machine.succeed(copy_bootstrap_closure)
+      machine.succeed('test "$(findmnt -n -T /mnt/nix/store -o TARGET)" = /mnt/nix/store')
+      machine.succeed('test "$(findmnt -n -T /mnt/nix/store -o FSTYPE)" = btrfs')
+      machine.succeed('test "$(findmnt -n -T /mnt/nix/store -o FSROOT)" = "/${bootstrapStoreSubvolume}"')
+      machine.succeed('test "$(findmnt -n -T /mnt/nix/var/nix/db -o TARGET)" != /mnt/nix/store')
+
+      # Model Disko replacing /nix/store while /nix/var/nix/db survives outside
+      # the store subvolume. If Nix trusts stale validity records, nix copy will
+      # skip the missing payloads; clearing that DB must make the copy complete.
+      machine.succeed("""
+        closure=$(nix-store -qR ${bootstrapToplevel})
+        printf '%s\\n' "$closure" | while IFS= read -r path; do rm -rf "/mnt$path"; done
+        test -s /mnt/nix/var/nix/db/db.sqlite
+        missing=$(printf '%s\\n' "$closure" | while IFS= read -r path; do test -e "/mnt$path" || printf '%s\\n' "$path"; done)
+        total=$(printf '%s\\n' "$closure" | wc -l)
+        missing_count=$(printf '%s\\n' "$missing" | wc -l)
+        test "$missing_count" -eq "$total"
+      """)
+      machine.succeed(copy_bootstrap_closure)
+      machine.succeed("""
+        closure=$(nix-store -qR ${bootstrapToplevel})
+        total=$(printf '%s\\n' "$closure" | wc -l)
+        missing=$(printf '%s\\n' "$closure" | while IFS= read -r path; do test -e "/mnt$path" || printf '%s\\n' "$path"; done)
+        missing_count=$(printf '%s\\n' "$missing" | wc -l)
+        echo "Stale target DB copy result: $((total - missing_count))/$total closure paths present"
+        test "$missing_count" -eq "$total"
+      """)
+      closure_count = len(machine.succeed("nix-store -qR ${bootstrapToplevel}").splitlines())
+      machine.log(f"Stale Nix database reproduced: nix copy left all {closure_count} closure paths absent.")
+      machine.succeed("rm -rf /mnt/nix/var/nix/db")
+      machine.succeed(copy_bootstrap_closure)
       machine.succeed("""
         closure=$(nix-store -qR ${bootstrapToplevel})
         total=$(printf '%s\\n' "$closure" | wc -l)
         missing=$(printf '%s\\n' "$closure" | while IFS= read -r path; do test -e "/mnt$path" || printf '%s\\n' "$path"; done)
         if [ -n "$missing" ]; then missing_count=$(printf '%s\\n' "$missing" | wc -l); else missing_count=0; fi
-        echo "NixOS Anywhere SSH transfer: $((total - missing_count))/$total closure paths present"
+        echo "Fresh target DB copy result: $((total - missing_count))/$total closure paths present"
         test "$missing_count" -eq 0
         test -e "/mnt${bootstrapToplevel}/activate"
         test -x "/mnt${bootstrapToplevel}/sw/bin/bash"
       """)
+      machine.log(f"Fresh Nix database restored all {closure_count} bootstrap closure paths.")
 
       # Model nixos-anywhere's root-shaped --extra-files transfer into /mnt.
       machine.succeed("mkdir -p /run/extra-files/persist/etc/ssh")

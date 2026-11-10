@@ -40,14 +40,14 @@ set -l runtime_dir "/run/user/"(id -u)
 set -l derived_public (mktemp "$runtime_dir/nixos-install-public.XXXXXX")
 set -l derived_fields (mktemp "$runtime_dir/nixos-install-derived-fields.XXXXXX")
 set -l expected_fields (mktemp "$runtime_dir/nixos-install-expected-fields.XXXXXX")
-ssh-keygen -y -f "$private_key" > "$derived_public" 2>/dev/null
+ssh-keygen -y -f "$private_key" >"$derived_public" 2>/dev/null
 if test $status -ne 0
     rm -f -- "$derived_public" "$derived_fields" "$expected_fields"
     printf 'OpenSSH rejected the staged private key.\n' >&2
     exit 1
 end
-awk '{ print $1 " " $2 }' "$derived_public" > "$derived_fields"
-awk '{ print $1 " " $2 }' "$public_key" > "$expected_fields"
+awk '{ print $1 " " $2 }' "$derived_public" >"$derived_fields"
+awk '{ print $1 " " $2 }' "$public_key" >"$expected_fields"
 cmp -s "$derived_fields" "$expected_fields"
 set -l key_pair_status $status
 rm -f -- "$derived_public" "$derived_fields" "$expected_fields"
@@ -135,9 +135,38 @@ if test "$confirmation" != "WIPE $host"
     printf 'Confirmation did not match; no install started.\n' >&2
     exit 1
 end
+set -l bootstrap_attr "$host-bootstrap"
+set -l bootstrap_store_name (nix eval --raw --no-write-lock-file ".#nixosConfigurations.$bootstrap_attr.config.appliance.storeName")
+set -l bootstrap_root_version (nix eval --raw --no-write-lock-file ".#nixosConfigurations.$bootstrap_attr.config.appliance.rootVersion")
+set -l expected_store_fsroot "/$bootstrap_store_name"_"$bootstrap_root_version"
+if test -z "$bootstrap_store_name" -o -z "$bootstrap_root_version"
+    printf 'Could not evaluate the expected bootstrap store subvolume.\n' >&2
+    exit 1
+end
+
+# Separate Disko from install so we can discard Nix validity metadata that may
+# survive Disko replacing /nix/store in the rescue environment.
+nix run --no-write-lock-file github:nix-community/nixos-anywhere/1.13.0 -- \
+    --no-use-machine-substituters \
+    --phases kexec,disko \
+    --flake ".#$bootstrap_attr" \
+    --target-host "$target"
+set -l phase_status $status
+if test $phase_status -ne 0
+    exit $phase_status
+end
+
+printf 'Verifying the mounted bootstrap store and clearing its possibly stale Nix database...\n'
+set -l reset_store_db_command "set -eu; findmnt -n -T /mnt/nix/store -o TARGET | grep -Fx /mnt/nix/store; findmnt -n -T /mnt/nix/store -o FSTYPE | grep -Fx btrfs; findmnt -n -T /mnt/nix/store -o FSROOT | grep -Fx $expected_store_fsroot; if test -d /mnt/nix/var/nix/db; then findmnt -n -T /mnt/nix/var/nix/db -o TARGET | grep -Fxv /mnt/nix/store; rm -rf -- /mnt/nix/var/nix/db; fi; test ! -e /mnt/nix/var/nix/db"
+ssh -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "root@$target_host" "$reset_store_db_command"
+if test $status -ne 0
+    printf 'Refusing to continue: bootstrap store identity or stale Nix DB cleanup check failed.\n' >&2
+    exit 1
+end
 
 exec nix run --no-write-lock-file github:nix-community/nixos-anywhere/1.13.0 -- \
     --no-use-machine-substituters \
-    --flake ".#$host" \
-    --target-host "$target" \
+    --phases install,reboot \
+    --flake ".#$bootstrap_attr" \
+    --target-host "root@$target_host" \
     --extra-files "$extra_files"
