@@ -32,6 +32,14 @@ pkgs.testers.runNixOSTest {
         serviceConfig.Type = "oneshot";
         path = [ pkgs.bcachefs-tools pkgs.coreutils pkgs.util-linux ];
         script = ''
+          if [ -e /sysroot/nix/prototype-interrupt-reset-once ]; then
+            rm /sysroot/nix/prototype-interrupt-reset-once
+            if [ -e /sysroot/root ]; then
+              bcachefs subvolume delete /sysroot/root
+            fi
+            reboot -f
+            exit 1
+          fi
           if [ ! -e /sysroot/root-blank ]; then
             if [ ! -e /sysroot/root ]; then
               bcachefs subvolume create /sysroot/root
@@ -93,9 +101,12 @@ pkgs.testers.runNixOSTest {
     machine.succeed("test \"$(findmnt -n -o FSTYPE /)\" = bcachefs")
     machine.succeed("test \"$(cat /nix/prototype-marker)\" = persistent")
     machine.succeed("mkdir -p /var/lib && printf volatile > /var/lib/bcachefs-root-marker")
+    machine.succeed("touch /nix/prototype-interrupt-reset-once")
 
     machine.crash()
     machine.wait_for_unit("multi-user.target")
+    machine.succeed("test \"$(findmnt -n -o FSTYPE /)\" = bcachefs")
+    machine.succeed("test ! -e /nix/prototype-interrupt-reset-once")
     machine.succeed("test ! -e /var/lib/bcachefs-root-marker")
     machine.succeed("test \"$(cat /nix/prototype-marker)\" = persistent")
   '';
