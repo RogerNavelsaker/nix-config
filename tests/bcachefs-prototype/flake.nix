@@ -13,6 +13,7 @@
       checks.${system} = {
         bcachefs-storage = import ./storage.nix { inherit pkgs; };
         bcachefs-root-boot = import ./root-boot.nix { inherit pkgs; };
+        bcachefs-usb-boot = import ./usb-boot.nix { inherit pkgs; };
       };
     };
 }
