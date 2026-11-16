@@ -13,7 +13,7 @@ pkgs.testers.runNixOSTest {
     system.stateVersion = "25.11";
 
     virtualisation = {
-      emptyDiskImages = lib.mkForce [ 512 512 ];
+      emptyDiskImages = lib.mkForce [ 512 ];
       mountHostNixStore = true;
       useBootLoader = true;
       useEFIBoot = true;
@@ -30,7 +30,7 @@ pkgs.testers.runNixOSTest {
         requiredBy = [ "initrd-nixos-activation.service" ];
         unitConfig.DefaultDependencies = false;
         serviceConfig.Type = "oneshot";
-        path = [ pkgs.bcachefs-tools pkgs.coreutils pkgs.util-linux ];
+        path = [ pkgs.bcachefs-tools pkgs.coreutils pkgs.systemd pkgs.util-linux ];
         script = ''
           if [ -e /sysroot/nix/prototype-interrupt-reset-once ]; then
             rm /sysroot/nix/prototype-interrupt-reset-once
@@ -64,18 +64,31 @@ pkgs.testers.runNixOSTest {
       fileSystems."/" = lib.mkForce {
         device = "/dev/vdb";
         fsType = "bcachefs";
-        options = [ "x-initrd.mount" ];
+        options = [ "x-initrd.mount" "degraded" ];
       };
       virtualisation.fileSystems."/" = lib.mkForce {
         device = "/dev/vdb";
         fsType = "bcachefs";
-        options = [ "x-initrd.mount" ];
+        options = [ "x-initrd.mount" "degraded" ];
       };
     };
   };
 
   testScript = ''
-    machine.succeed("bcachefs format --replicas=2 --fs_label=prototype /dev/vdb /dev/vdc")
+    import os
+
+    replica_image = machine.state_dir / "bcachefs-replica.img"
+    with open(replica_image, "wb") as replica:
+        replica.truncate(512 * 1024 * 1024)
+    os.environ["QEMU_OPTS"] = (
+        os.environ.get("QEMU_OPTS", "")
+        + f" -drive file={replica_image},format=raw,if=none,id=bcachefs-replica"
+        + " -device usb-storage,id=bcachefs-replica,drive=bcachefs-replica"
+    )
+    machine.start(allow_reboot=True)
+    machine.wait_for_unit("multi-user.target")
+    machine.succeed("test -b /dev/sda")
+    machine.succeed("bcachefs format --replicas=2 --fs_label=prototype /dev/vdb /dev/sda")
     machine.succeed("mkdir -p /mnt")
     machine.succeed("mount -t bcachefs /dev/vdb /mnt")
     machine.succeed("bcachefs subvolume create /mnt/root")
@@ -96,18 +109,34 @@ pkgs.testers.runNixOSTest {
         break
     assert specialisation_id is not None, "Bcachefs specialisation boot entry not found"
     machine.succeed(f"bootctl set-default {specialisation_id}")
-    machine.crash()
+    machine.reboot()
     machine.wait_for_unit("multi-user.target")
     machine.succeed("test \"$(findmnt -n -o FSTYPE /)\" = bcachefs")
     machine.succeed("test \"$(cat /nix/prototype-marker)\" = persistent")
     machine.succeed("mkdir -p /var/lib && printf volatile > /var/lib/bcachefs-root-marker")
     machine.succeed("touch /nix/prototype-interrupt-reset-once")
 
-    machine.crash()
+    machine.reboot()
     machine.wait_for_unit("multi-user.target")
     machine.succeed("test \"$(findmnt -n -o FSTYPE /)\" = bcachefs")
     machine.succeed("test ! -e /nix/prototype-interrupt-reset-once")
     machine.succeed("test ! -e /var/lib/bcachefs-root-marker")
+    machine.succeed("test \"$(cat /nix/prototype-marker)\" = persistent")
+    # Remove one mirrored member from the VM, then prove the Bcachefs root still boots.
+    machine.send_monitor_command("device_del bcachefs-replica")
+    machine.wait_until_succeeds("test ! -b /dev/sda", timeout=30)
+    machine.reboot()
+    machine.wait_for_unit("multi-user.target")
+    machine.succeed("test \"$(findmnt -n -o FSTYPE /)\" = bcachefs")
+    machine.succeed("test \"$(cat /nix/prototype-marker)\" = persistent")
+
+    # Reattach the same virtual disk and verify the filesystem is accessible.
+    drive_result = machine.send_monitor_command(f"drive_add 0 if=none,file={replica_image},format=raw,id=bcachefs-replica")
+    assert "error" not in drive_result.lower(), drive_result
+    add_result = machine.send_monitor_command("device_add usb-storage,id=bcachefs-replica,drive=bcachefs-replica")
+    assert "error" not in add_result.lower(), add_result
+    machine.wait_until_succeeds("test -b /dev/sda", timeout=30)
+    machine.succeed("bcachefs fs usage /")
     machine.succeed("test \"$(cat /nix/prototype-marker)\" = persistent")
   '';
 }
