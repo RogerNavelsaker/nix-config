@@ -3,7 +3,8 @@
 
   inputs.multiverse.url = "github:fzakaria/nixpkgs-multiverse/0e0b03cad7c24221d3e59b886bc74d1af5f71d3c";
 
-  outputs = { multiverse, ... }:
+  outputs =
+    { multiverse, ... }:
     let
       system = "x86_64-linux";
       nixpkgsFlake = multiverse.multiverse.${system}.flakeAt "d4f25a3e562008648d45bcf2d70bcc7422cad84e";
@@ -15,6 +16,7 @@
         bcachefs-root-boot = import ./root-boot.nix { inherit pkgs; };
         bcachefs-usb-boot = import ./usb-boot.nix { inherit pkgs; };
         bcachefs-nvme-root-boot = import ./nvme-root-boot.nix { inherit pkgs; };
+        bcachefs-integrated-usb-nvme-root = import ./integrated-boot.nix { inherit pkgs; };
         bcachefs-swapfile-rejection = import ./swapfile.nix { inherit pkgs; };
       };
     };

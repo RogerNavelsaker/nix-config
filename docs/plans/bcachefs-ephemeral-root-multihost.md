@@ -44,7 +44,7 @@ Plan a conventional NixOS system for Nanoserver-01 and Miniserver-01/02/03 using
 
 - Exact Bcachefs device/replica configuration, formatting and mount options, subvolume/snapshot/reset mechanism, and initrd implementation.
 - Exact partition sizes and USB partition table. Swap is deferred; if revisited, resolve the redundant NVMe layout, size, encryption, and activation order, then validate on the target locked kernel.
-- Concrete EFI fallback/synchronization integration. systemd-boot with UKIs is selected and the isolated QEMU/OVMF prototype passes independent boot and sequential ESP-sync tests; real-firmware compatibility and production NixOS update integration remain unverified.
+- Concrete EFI fallback/synchronization integration. systemd-boot with UKIs is selected; QEMU/OVMF tests cover independent USB boot, sequential ESP synchronization, and integrated USB plus mirrored-NVMe root/reset, including degraded boot with one NVMe member absent. Generation switch/rollback, real-firmware compatibility, and production NixOS update integration remain unverified.
 - Feature-by-feature persistent paths and any shared core identity/secrets requirements, determined by inspection of host feature configs.
 - Backup design, destination, retention, and restore testing (explicitly deferred).
 - Whether and when to authorize a physical pilot after all disposable-system gates pass.
