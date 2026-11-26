@@ -78,6 +78,13 @@ inputs:
   nix-secrets:
     url: github:RogerNavelsaker/nix-secrets
     flake: false
+  multiverse:
+    url: github:fzakaria/nixpkgs-multiverse
+  roger-navelsaker:
+    url: github:RogerNavelsaker/nixpkgs/929494d31152559e50e473b03120b86043b18a1e
+    inputs:
+      nixpkgs:
+        follows: nixpkgs
 nixConfig:
   extra-substituters:
     - https://cachix.cachix.org
