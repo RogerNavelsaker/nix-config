@@ -580,26 +580,6 @@
         "type": "github"
       }
     },
-    "disko": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1773889306,
-        "narHash": "sha256-PAqwnsBSI9SVC2QugvQ3xeYCB0otOwCacB1ueQj2tgw=",
-        "owner": "nix-community",
-        "repo": "disko",
-        "rev": "5ad85c82cc52264f4beddc934ba57f3789f28347",
-        "type": "github"
-      },
-      "original": {
-        "owner": "nix-community",
-        "repo": "disko",
-        "type": "github"
-      }
-    },
     "docling-serve-src": {
       "flake": false,
       "locked": {
@@ -1704,28 +1684,28 @@
         ]
       },
       "locked": {
-        "lastModified": 1793972959,
-        "narHash": "sha256-C+q5KtQitCHrlAfI4YS1/ALZpnThjUhWzHBwXolCGWE=",
+        "lastModified": 1794580009,
+        "narHash": "sha256-/VGzLJyEUU4JFUUc84V+1AWq5jluN8TKKEpHnKSOMYE=",
         "owner": "RogerNavelsaker",
         "repo": "nix-lib",
-        "rev": "c00fe8410300c9fb6abe7aa0af04cbb02823bc96",
+        "rev": "4e135f1340f0c5159cec94ad680fa301ef9acc43",
         "type": "github"
       },
       "original": {
         "owner": "RogerNavelsaker",
         "repo": "nix-lib",
-        "rev": "c00fe8410300c9fb6abe7aa0af04cbb02823bc96",
+        "rev": "4e135f1340f0c5159cec94ad680fa301ef9acc43",
         "type": "github"
       }
     },
     "nix-secrets": {
       "flake": false,
       "locked": {
-        "lastModified": 1791370419,
-        "narHash": "sha256-+uBLQOVEotoHcIw40KVynqpS06VcpwtHPhFYYcp+oHE=",
+        "lastModified": 1794340809,
+        "narHash": "sha256-3IS66+kn6huqGCM9QnA6bWuF5ESeYS1KPzICMj8j1fo=",
         "owner": "RogerNavelsaker",
         "repo": "nix-secrets",
-        "rev": "cfd4a904c660ade9adcf3de8d9506fa07a8d679c",
+        "rev": "d242368c2812b70702450e1cdc590658a96eebe9",
         "type": "github"
       },
       "original": {
@@ -4096,7 +4076,6 @@
         "autofirma-nix": "autofirma-nix",
         "comin": "comin",
         "devenv": "devenv",
-        "disko": "disko",
         "git-hooks": "git-hooks_2",
         "hardware": "hardware",
         "headroom": "headroom",

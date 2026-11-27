@@ -3,8 +3,7 @@
   pkgs,
   lib,
   self,
-  diskoLib,
-  diskoModule,
+  herdr,
 }:
 let
   # Use nixpkgs lib for standard functions
@@ -22,18 +21,76 @@ let
     name: config: nameValuePair "home-${name}" config.activationPackage
   ) self.homeConfigurations;
 
-  nanoserverProfiles = [
-    "nanoserver-01"
-    "nanoserver-01-slot-b"
-    "nanoserver-01-update-v2-a"
-    "nanoserver-01-update-v2-b"
-  ];
-  passwordlessSudoCheck =
-    assert builtins.all (
-      profile: !self.nixosConfigurations.${profile}.config.security.sudo.wheelNeedsPassword
-    ) nanoserverProfiles;
-    assert self.nixosConfigurations.miniserver-01.config.security.sudo.wheelNeedsPassword;
-    pkgs.runCommand "passwordless-sudo-opt-in-check" { } "touch $out";
+  resourceTreeCheck =
+    let
+      expectedHosts = [
+        "alex"
+        "avery"
+        "ester-desktop"
+        "jules"
+        "mara"
+        "mira"
+        "rowan"
+      ];
+      expectedHomes = [
+        "admin@ester-desktop"
+        "admin@miniserver-01"
+        "admin@miniserver-02"
+        "admin@miniserver-03"
+        "admin@nanoserver-01"
+        "alex@agent-alex"
+        "avery@agent-avery"
+        "jules@agent-jules"
+        "mara@agent-mara"
+        "mira@agent-mira"
+        "rowan@agent-rowan"
+      ];
+      lxcAgents = [
+        "avery"
+        "jules"
+        "mira"
+        "rowan"
+      ];
+      lxcAgentMatches =
+        name:
+        let
+          config = self.nixosConfigurations.${name}.config;
+        in
+        config.networking.hostName == "agent-${name}"
+        && config.hostSpec.users == [ name ]
+        && config.users.users.${name}.isNormalUser
+        && !config.services.openssh.enable;
+    in
+    assert builtins.all (name: builtins.hasAttr name self.nixosConfigurations) expectedHosts;
+    assert builtins.all (name: builtins.hasAttr name self.homeConfigurations) expectedHomes;
+    assert builtins.all (name: !(builtins.hasAttr name self.nixosConfigurations)) [
+      "nanoserver-01"
+      "miniserver-01"
+      "miniserver-02"
+      "miniserver-03"
+    ];
+    assert builtins.all
+      (name: !(builtins.hasAttr name self.packages.${pkgs.stdenv.hostPlatform.system}))
+      [
+        "nanoserver-01-update-bundle"
+        "nanoserver-01-update-v4-bundle"
+      ];
+    assert self.nixosConfigurations.iso.config.system.stateVersion == "25.11";
+    assert !(builtins.hasAttr "roger-aio" self.nixosConfigurations);
+    assert !(builtins.hasAttr "rona@aio" self.homeConfigurations);
+    assert !(builtins.hasAttr "rona@roger-aio" self.homeConfigurations);
+    assert !(builtins.hasAttr "rona@nanoserver-01" self.homeConfigurations);
+    assert self.nixosConfigurations.ester-desktop.config.virtualisation.podman.enable;
+    assert self.nixosConfigurations.ester-desktop.config.networking.firewall.enable;
+    assert builtins.all lxcAgentMatches lxcAgents;
+    assert self.nixosConfigurations.ester-desktop.config.networking.hostName == "services";
+    assert self.nixosConfigurations.ester-desktop.config.wsl.defaultUser == "admin";
+    assert self.nixosConfigurations.mara.config.networking.hostName == "agent-mara";
+    assert self.nixosConfigurations.mara.config.wsl.enable;
+    assert self.nixosConfigurations.mara.config.wsl.defaultUser == "mara";
+    assert !self.nixosConfigurations.mara.config.wsl.wslConf.automount.enabled;
+    assert !self.nixosConfigurations.mara.config.wsl.wslConf.interop.enabled;
+    pkgs.runCommand "resource-tree-output-check" { } "touch $out";
 
   # Check formatting (--no-require-git needed since store path has no .git)
   formatCheck = pkgs.runCommand "format-check" { } ''
@@ -77,8 +134,10 @@ let
     touch $out
   '';
 
-  nanoserverSlotUkiCheck = import ./tests/nanoserver-slot-uki.nix { inherit lib pkgs self; };
-  hostPlatformCheck = import ./tests/host-platform.nix { inherit lib pkgs self; };
+  nanoserverWorkloadNixCheck = import ./tests/nanoserver-workload-nix.nix { inherit pkgs; };
+  nanoserverWorkloadPodmanCheck = import ./tests/nanoserver-workload-podman.nix { inherit pkgs; };
+  herdrServerCheck = import ./tests/herdr-server.nix { inherit pkgs herdr; };
+  graftSecretRenderCheck = import ./tests/graft-secret-render.nix { inherit pkgs; };
 
   actionlintCheck =
     pkgs.runCommand "github-actions-workflows-check"
@@ -90,52 +149,6 @@ let
         actionlint *.yml
         touch "$out"
       '';
-  nanoserverV4AssetSizeCheck =
-    let
-      bundle = self.packages.${pkgs.stdenv.hostPlatform.system}.nanoserver-01-update-v4-bundle;
-    in
-    pkgs.runCommand "nanoserver-v4-release-asset-size-check" { } ''
-      size=$(stat -c '%s' ${bundle}/nanoserver-store_4.tar.xz)
-      if (( size > 1900000000 )); then
-        echo "Nanoserver v4 store archive exceeds the 1.9 GB GitHub Release budget: $size bytes" >&2
-        exit 1
-      fi
-      touch "$out"
-    '';
-  nanoserverDiskoTests = lib.optionalAttrs pkgs.stdenv.hostPlatform.isx86_64 {
-    nanoserver-01-disko-layout = import ./tests/nanoserver-disko-layout.nix {
-      inherit
-        diskoLib
-        diskoModule
-        lib
-        pkgs
-        self
-        ;
-    };
-  };
-  miniserverDiskoTests = lib.optionalAttrs pkgs.stdenv.hostPlatform.isx86_64 (
-    builtins.listToAttrs (
-      map
-        (hostname: {
-          name = "${hostname}-disko-layout";
-          value = import ./tests/miniserver-disko-layout.nix {
-            inherit
-              diskoLib
-              diskoModule
-              lib
-              pkgs
-              self
-              hostname
-              ;
-          };
-        })
-        [
-          "miniserver-01"
-          "miniserver-02"
-          "miniserver-03"
-        ]
-    )
-  );
 
   # Validate feature structure
   featureStructureCheck =
@@ -159,8 +172,6 @@ let
 in
 nixosChecks
 // homeChecks
-// nanoserverDiskoTests
-// miniserverDiskoTests
 // {
   inherit
     formatCheck
@@ -168,34 +179,32 @@ nixosChecks
     statixCheck
     nixSyntaxCheck
     featureStructureCheck
-    passwordlessSudoCheck
     ;
 
-  nanoserver-01-slot-uki = nanoserverSlotUkiCheck;
+  nanoserver-workload-nix = nanoserverWorkloadNixCheck;
+  nanoserver-workload-podman = nanoserverWorkloadPodmanCheck;
   workflow-lint = actionlintCheck;
-  host-platform = hostPlatformCheck;
-  nanoserver-v4-asset-size = nanoserverV4AssetSizeCheck;
+  herdr-server = herdrServerCheck;
+  graft-secret-render = graftSecretRenderCheck;
 
+  resource-tree = resourceTreeCheck;
   # All checks combined
   all =
     pkgs.runCommand "all-checks"
       {
-        buildInputs =
-          builtins.attrValues (nixosChecks // homeChecks)
-          ++ [
-            formatCheck
-            deadnixCheck
-            statixCheck
-            nixSyntaxCheck
-            featureStructureCheck
-            passwordlessSudoCheck
-            nanoserverSlotUkiCheck
-            hostPlatformCheck
-            actionlintCheck
-            nanoserverV4AssetSizeCheck
-          ]
-          ++ builtins.attrValues nanoserverDiskoTests
-          ++ builtins.attrValues miniserverDiskoTests;
+        buildInputs = builtins.attrValues (nixosChecks // homeChecks) ++ [
+          formatCheck
+          deadnixCheck
+          statixCheck
+          nixSyntaxCheck
+          featureStructureCheck
+          resourceTreeCheck
+          nanoserverWorkloadNixCheck
+          nanoserverWorkloadPodmanCheck
+          herdrServerCheck
+          graftSecretRenderCheck
+          actionlintCheck
+        ];
       }
       ''
         echo "All checks passed!"

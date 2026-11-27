@@ -1,8 +1,9 @@
-{ ... }:
-{
+_: {
   users.mutableUsers = false;
-  users.users.rona = {
+  users.groups.admin = { };
+  users.users.admin = {
     isNormalUser = true;
+    group = "admin";
     extraGroups = [ "wheel" ];
     openssh.authorizedKeys.keyFiles = [ ../nanoserver-01/rona.pub ];
   };
@@ -20,7 +21,7 @@
       PermitRootLogin = "no";
       PasswordAuthentication = false;
       KbdInteractiveAuthentication = false;
-      AllowUsers = [ "rona" ];
+      AllowUsers = [ "admin" ];
     };
   };
 }

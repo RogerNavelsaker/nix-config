@@ -1,8 +1,6 @@
-{ inputs, ... }:
+{ ... }:
 {
   imports = [
-    inputs.disko.nixosModules.disko
-    ./devices.nix
     ./hardware.nix
     ./network.nix
     ./persistence.nix

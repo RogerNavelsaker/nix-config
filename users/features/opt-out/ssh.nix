@@ -47,13 +47,15 @@
       # Local VMs
       "*.local" = {
         user = "rona";
-        forwardAgent = true;
+        # TODO: enable forwarding only for an exact host when onward SSH is needed.
+        # forwardAgent = true;
       };
 
       # Tailscale hosts
       "*.ts.net" = {
         user = "rona";
-        forwardAgent = true;
+        # TODO: enable forwarding only for an exact host when onward SSH is needed.
+        # forwardAgent = true;
       };
 
       # All hosts - common settings

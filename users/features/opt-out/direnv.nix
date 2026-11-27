@@ -16,6 +16,7 @@
         strict_env = true;
       };
       whitelist = {
+        # Keep workspace-wide trust: per-repo approval is impractical across 90+ repositories.
         prefix = [
           "${config.home.homeDirectory}/Repositories"
         ];

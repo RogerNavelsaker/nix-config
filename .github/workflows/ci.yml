@@ -27,15 +27,13 @@ jobs:
           name: rogernavelsaker
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
 
-      - name: Check Nanoserver update targets
-        # Scope CI to the appliance artifacts; the full flake check currently
-        # realizes an unrelated upstream Autofirma Maven fixed-output hash.
+      - name: Check active project targets
         run: >-
           nix build
-          .#checks.x86_64-linux.nanoserver-01-slot-uki
+          .#checks.x86_64-linux.resource-tree
           .#checks.x86_64-linux.workflow-lint
-          .#checks.x86_64-linux.host-platform
-          .#checks.x86_64-linux.nanoserver-v4-asset-size
-          .#packages.x86_64-linux.nanoserver-01-update-bundle
-          .#packages.x86_64-linux.nanoserver-01-update-v4-bundle
+          .#checks.x86_64-linux.herdr-server
+          .#checks.x86_64-linux.graft-secret-render
+          .#checks.x86_64-linux.nanoserver-workload-nix
+          .#checks.x86_64-linux.nanoserver-workload-podman
           --no-link --accept-flake-config

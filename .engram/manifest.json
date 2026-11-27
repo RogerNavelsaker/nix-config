@@ -8,6 +8,14 @@
       "sessions": 1,
       "memories": 3,
       "prompts": 0
+    },
+    {
+      "id": "9eeadd07",
+      "created_by": "rona",
+      "created_at": "2026-10-08T10:27:23.897046486Z",
+      "sessions": 1,
+      "memories": 2,
+      "prompts": 0
     }
   ]
 }

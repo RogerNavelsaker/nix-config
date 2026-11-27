@@ -11,3 +11,5 @@ tags:
 - [[disko-umount-recursive-failure-requires-parent-mountpoint-1396]]
 - [[disko-nested-mount-repeatability-qemu-regression-fixed-1402]]
 - [[separate-workload-nix-from-appliance-os-updates-1576]]
+- [[nanoserver-gitops-update-policy-stage-inactive-slot-reboot-m-1579]]
+- [[automate-nanoserver-update-staging-keep-reboot-manual-and-a-1580]]

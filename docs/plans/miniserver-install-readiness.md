@@ -1,6 +1,8 @@
 # Miniserver install readiness
 
-Status: miniserver profiles, disposable-QEMU layouts, bootstrap-install/activation/final-appliance boot tests, and the local gate passed before physical work. Physical installation remains authorized, but miniserver-01 is failed and unverified. The latest guarded attempt accepted `WIPE miniserver-01`, ran Disko and reformatted the target, then failed during bootstrap activation with missing `activate` and `sw/bin/bash`. The user reports Ctrl+C did not stop stalled `ssh-copy-id`; Ctrl+D was used, after which NixOS Anywhere continued. SSH-key upload success is unconfirmed. Read-only inspection found 0 of 736 expected closure paths in the new Btrfs store subvolume, while `/mnt/nix/var/nix/db/db.sqlite` retained earlier validity records. Disposable QEMU reproduced the mechanism: with stale DB records and absent store payloads, `nix copy` left all 738 paths absent; removing the DB restored all 738/738 paths, and the complete install/activation/final-boot test passed. The guarded installer is locally changed to split the Disko and install phases, verify the expected Btrfs subvolume, and clear that DB before transfer; this wrapper has not yet been physically exercised. Do not reboot or write to miniserver-01 until the change is reviewed/published and a fresh guarded attempt is authorized.
+> **Superseded procedures below are historical evidence, not executable instructions.** The Bcachefs plan is current authority; no physical operation is authorized.
+
+Status: **Historical legacy-appliance evidence only.** The appliance profiles, Disko layouts, bootstrap tests, and rescue installer have been archived and removed from the active checkout. Miniserver-01 was left failed/unverified in rescue after the 2026-11-09 install attempt; that authorization is historical and superseded by the current Bcachefs plan's no-operation constraint. Do not reboot, write to, or install any Miniserver without fresh, separate explicit authorization.
 Compatibility note: the lock pins published nix-lib commit `c00fe8410300c9fb6abe7aa0af04cbb02823bc96`; the miniserver slot-B NixOS toplevel evaluates successfully against it, confirming the required `nix-lib.impermanence` helpers are available. Preserve the remote lock pin.
 
 ## Evidence
@@ -41,6 +43,9 @@ Compatibility note: the lock pins published nix-lib commit `c00fe8410300c9fb6abe
 ## Current operational status
 
 The Miniserver profiles and QEMU layout/bootstrap/activation/final-appliance tests pass. Physical installation was authorized, but miniserver-01 remains failed in rescue and is not boot-verified. Disko ran and the latest attempt failed activation with missing bootstrap closure paths. Read-only inspection found 0/736 paths in the fresh store and an older Nix validity DB outside that store; disposable QEMU confirmed that the stale DB makes `nix copy` skip absent payloads and that clearing it restores all 738 paths and a successful final boot. The guarded helper now separates kexec/Disko from install and clears the DB only after validating the expected Btrfs bootstrap subvolume. This helper change is not yet physically validated. Do not reboot or make further target writes until the updated workflow is reviewed/published and a new attempt is explicitly authorized.
+
+
+As of 2026-11-10 20:50 UTC, a fresh **read-only** inventory confirmed Miniserver-01 remains in the rescue ISO. The four configured target disks were present; no target mounts or active installer were observed, and no target Nix DB/profile links were observed. No target writes or reinstallation were started. This does not establish a successful install or boot; keep the host blocked until the updated guarded workflow is reviewed/published and a new attempt is explicitly authorized.
 
 ## Earlier Nanoserver baseline evaluation
 

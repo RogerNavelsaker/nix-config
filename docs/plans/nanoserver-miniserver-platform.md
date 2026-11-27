@@ -14,9 +14,9 @@ Roll out host virtualization and container tools first, then build the Kubernete
 
 ## Phase 1 rollout status and gates
 
-- Nanoserver v3 remains active; v3 and v2 artifacts are immutable rollback options. The P/L-only v4 image must pass CI and be published as a new signed version before updating the host.
-- Read-only preflight on Nanoserver confirmed the two-device Btrfs root mirror, both boot ESPs, and `/persist` are mounted; the CPU exposes `vmx`. The explicit `nanoserver` sysupdate component can list and verify the signed manifest. The generic `systemd-sysupdate.service` currently fails with “No transfer definitions found”; track that separately.
-- Deploy Nanoserver through the existing `appliance-update` A/B path, verify boot and host services, then use it as the first canary. Do not bypass the A/B updater with an in-place rebuild.
+- Nanoserver v3 remains active; v3 and v2 artifacts are immutable rollback options. The P/L-only v4 image must pass CI and be published as a new signed version before updating the host. Release publication and host rollout remain separately authorized.
+- Read-only preflight on Nanoserver confirmed the two-device Btrfs root mirror, both boot ESPs, and `/persist` are mounted; the CPU exposes `vmx`. The explicit `nanoserver` sysupdate component can list and verify the signed manifest. The deployed v3 generic `systemd-sysupdate.service` currently fails with “No transfer definitions found”; the local v4 configuration overrides it with a component-specific stage-only wrapper. The `nanoserver-01-slot-uki` and host-platform checks pass, including candidate discovery/no-candidate and staged-version replacement fixtures. The v4-root disposable-QEMU boot/recovery test also passes. These are local validation only: v4 behavior is not active until its release is separately approved and installed.
+- Deploy Nanoserver through the guarded `appliance-update` path, verify boot and host services, then use it as the first canary. Reboot remains manual. Once the stage-only v4 configuration is running, newer signed versions are polled and staged automatically; do not bypass the updater with an in-place rebuild.
 - Miniserver profiles remain uninstalled. Their physical installation, Disko, and disk changes are outside this phase and require explicit authorization. Once installed, apply the P/L profile one host at a time.
 
 ## Phase 2: Kubernetes service platform (deferred)
@@ -30,7 +30,7 @@ This cluster does not add host/VM HA. Service-level redundancy will be planned t
 - Evaluate all miniserver profiles and Nanoserver v4: libvirt and Podman enabled; K3s disabled.
 - Evaluate Nanoserver v3: P/L and K3s remain disabled; retain the existing signed-manifest and `Verify=` compatibility assertions for the published v3 artifact, while v4 omits unsupported `Verify=` keys.
 - Build the v4 A/B bundle and enforce the release-asset size limit in CI. CI does not publish or deploy.
-- After the signed release is available, use `appliance-update 4`; verify the active version/slot, `/dev/kvm`, `libvirtd.socket`, Podman, and persisted paths after reboot. Keep v3/v2 rollback intact.
+- After the signed release is available and separately authorized, use `appliance-update 4` to stage it; reboot manually. Verify the running version/slot, `/dev/kvm`, `libvirtd.socket`, Podman, and persisted paths. Keep v3/v2 rollback intact.
 
 ## Safety constraints
 

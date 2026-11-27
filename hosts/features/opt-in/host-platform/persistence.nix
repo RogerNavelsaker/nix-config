@@ -8,7 +8,7 @@
       ];
 
   # Keep per-user rootless Podman layers and container state across ephemeral-root boots.
-  environment.persistence."/persist".users.rona.directories = [
+  environment.persistence."/persist".users.admin.directories = [
     ".local/share/containers"
   ];
 }
