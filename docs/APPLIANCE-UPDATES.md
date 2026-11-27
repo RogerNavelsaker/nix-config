@@ -19,18 +19,32 @@ The export is unencrypted and must be treated as a CI signing credential. Keep i
 
 After CI succeeds on `main`, an operator dispatches the publisher for that exact commit. It is currently allowlisted to `nanoserver-01-update-v4-bundle`; it does not publish the default v3 bundle or historical rollback assets. It creates a binary-mode SHA-256 manifest, signs it with the CI key, and publishes the v4 payload files. The release becomes the `latest` release used by appliances, and its manifest lists only that new version's assets. Historical releases remain available in GitHub Release history. The workflow rejects any payload filename already present in a release, so a new image version must use new versioned filenames. Release tags are commit-specific and must not be reused.
 
-The initial published release contained the Nanoserver v2 bundle and verified the publishing path, but it was not a newer update for a host already running v2. Release `appliance-release-b6931964ed72274e6f25110095e41f46698d1d4e` contains the signed v3 bundle. It was deployed to `nanoserver-01` after explicit authorization; v3 slot A is active and v2 remains installed for rollback.
+The initial published release contained the Nanoserver v2 bundle and verified the publishing path, but it was not a newer update for a host already running v2. Release `appliance-release-b6931964ed72274e6f25110095e41f46698d1d4e` contains the signed v3 bundle. It was deployed to `nanoserver-01` after explicit authorization; software version v3 is active and v2 remains installed for rollback.
 
 ## Poll, stage, and activate
 
-The running v3 host's generic `systemd-sysupdate.service` currently fails with “No transfer definitions found”; do not rely on its timer to stage this update. The explicit `nanoserver` component path can list versions and verify the signed manifest. Use the guarded `appliance-update <new-version>` wrapper below; it runs the component-specific updater, checks the mirrored root and mounts, and requires confirmation. No update is staged automatically.
+The currently deployed v3 host's generic `systemd-sysupdate.service` fails with “No transfer definitions found.” The component-specific stage-only service is part of the pending v4 configuration and is not active on the host until an approved v4 release is installed. Until then, use the guarded manual command below.
 
-To explicitly select a staged version for the next boot, run:
+In the updated configuration, the daily timer runs `appliance-update --latest`. It checks the signed `nanoserver` component for a newer version, validates the mirrored root and mounts, stages the exact version, verifies the store, registration, and UKIs on both physical ESPs, then sets a one-shot entry on the currently active ESP. It never reboots. `ProtectVersion=%A` and `InstancesMax=2` keep the running software version and one staged version; newer releases replace the staged version. After rebooting successfully into B, B becomes the running version and the next update replaces the other version. The user initiates reboot manually.
+
+Inspect the running and available/staged versions and the polling service with:
+
+```sh
+grep -E '^(IMAGE_ID|IMAGE_VERSION)=' /etc/os-release
+grep -o 'nanoserver.version=[0-9]*' /proc/cmdline
+systemd-sysupdate --component=nanoserver list
+systemctl status systemd-sysupdate.timer
+journalctl -u systemd-sysupdate.service
+```
+
+The listing shows installed and available versions; compare it with `IMAGE_VERSION` or the kernel command line to identify a staged version. If staging fails, the service logs the failure and does not arm a boot target.
+
+For the operator-controlled break-glass path, stage a specific version with confirmation:
 
 ```sh
 sudo appliance-update <new-version>
 ```
 
-The command rechecks the mirrored root devices and mounts, requests confirmation, runs `systemd-sysupdate` for the requested version, and sets a one-shot boot entry on the currently active ESP. Reboot separately during an approved window. Keep the previous version available until the new boot passes its health gate; boot counting and the other slot provide the recovery path.
+This performs the same fail-closed checks and one-shot selection but prompts before staging. Reboot separately when ready. Keep the running version available until the new boot passes its health gate; UKI boot counting and `systemd-bless-boot` provide fallback.
 
-CI and release publication do not themselves deploy or activate an update. The v4 transfer definitions omit unsupported systemd-sysupdate `Verify=` keys; signed-manifest verification remains enabled through the configured keyring. Keep each published per-host numeric version immutable. Staging and rebooting are separate operations; reboot only after staging succeeds and within the approved rollout window.
+CI and release publication do not themselves deploy or activate an update. The v4 transfer definitions omit unsupported systemd-sysupdate `Verify=` keys; signed-manifest verification remains enabled through the configured keyring. Keep each published per-host numeric version immutable. Release publication remains a separate manual operation; staging and rebooting are separate, and reboot remains manual.

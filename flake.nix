@@ -27,6 +27,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # Headroom requires ast-grep-cli from unstable rather than the agent channel.
     headroom = {
       url = "github:RogerNavelsaker/nixpkg-headroom/cd05717263cff0bbf20cb0c259831e2827d4c4a9";
       inputs.nixpkgs.follows = "nixpkgs-unstable";
@@ -154,6 +155,10 @@
           inherit (nixpkgs) lib;
         })
         // (import ./hosts/nanoserver-01/update-bundles.nix { inherit pkgs self; })
+        // {
+          # Package-only example for the separate Nanoserver workload runtime prototype.
+          nanoserver-workload-test = pkgs.hello;
+        }
       );
       formatter = lib.forEachSystem (pkgs: pkgs.nixfmt-rfc-style);
       devShells = lib.forEachSystem (pkgs: import ./devshells { inherit inputs pkgs; });
@@ -161,6 +166,7 @@
         pkgs:
         import ./checks.nix {
           inherit pkgs self;
+          herdr = inputs.herdr.packages.${pkgs.stdenv.hostPlatform.system}.default;
           diskoLib = inputs.disko.lib;
           diskoModule = inputs.disko.nixosModules.disko;
           inherit (nixpkgs) lib;
@@ -222,9 +228,38 @@
             };
           };
 
-          # Defer the CachyOS Roger-AIO NixOS and Home Manager outputs until migration.
+          /*
+            # Temporarily disabled while the AIO desktop/dev closure is out of scope.
+            # Arch Linux standalone Home Manager
+            "rona@aio" = {
+              username = "rona";
+              hostname = "aio";
+              system = "x86_64-linux";
+              stateVersion = "25.11";
+              features = {
+                opt-in = [
+                  # Deferred until the full Roger AIO Firefox/AutoFirma integration is ready.
+                  # "autofirma"
+                  "beeper"
+                  "bitwarden"
+                  "claude-code"
+                  "firefox"
+                  "goose"
+                  "nixgl" # GPU wrapper for non-NixOS
+                  "plasma"
+                  "tailscale"
+                  "terminals"
+                  "theming" # GTK/Qt theme management
+                  "vscode"
+                  "yazi"
+                  "yubikey"
+                ];
+              };
+            };
+          */
         }
         // lib.mkClankers {
+          system = "x86_64-linux";
           stateVersion = "25.11";
           features.opt-out = [
             "git"
@@ -232,7 +267,7 @@
           ];
         };
 
-      # Apps for easy activation (generated from homeConfigurations)
+      # Per-profile apps remain available; there is no default alias while AIO is disabled.
       apps = lib.forEachSystem (_: lib.mkHomeApps { inherit self; });
     };
 }

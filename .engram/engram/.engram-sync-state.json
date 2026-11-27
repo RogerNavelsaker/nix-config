@@ -1,9 +1,11 @@
 {
-  "last_export_at": "2026-10-08T09:55:51Z",
+  "last_export_at": "2026-10-08T10:27:24Z",
   "files": {
     "1396": "nix-config/discovery/disko-umount-recursive-failure-requires-parent-mountpoint-1396.md",
     "1402": "nix-config/discovery/disko-nested-mount-repeatability-qemu-regression-fixed-1402.md",
-    "1576": "nix-config/decision/separate-workload-nix-from-appliance-os-updates-1576.md"
+    "1576": "nix-config/decision/separate-workload-nix-from-appliance-os-updates-1576.md",
+    "1579": "nix-config/decision/nanoserver-gitops-update-policy-stage-inactive-slot-reboot-m-1579.md",
+    "1580": "nix-config/decision/automate-nanoserver-update-staging-keep-reboot-manual-and-a-1580.md"
   },
   "session_hubs": {
     "manual-save-nix-config": "_sessions/manual-save-nix-config.md"

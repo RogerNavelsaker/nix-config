@@ -18,7 +18,7 @@
 
   services.avahi = {
     enable = true;
-    hostName = config.networking.hostName;
+    inherit (config.networking) hostName;
     publish = {
       addresses = true;
       workstation = true;

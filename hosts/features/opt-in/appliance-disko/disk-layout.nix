@@ -1,10 +1,55 @@
-{ config, ... }:
+{ config, lib, ... }:
 let
   storeSubvolume = "${config.appliance.storeName}_${config.appliance.rootVersion}";
   root = config.appliance.btrfs;
   inherit (config.appliance) devices;
   inherit (config.appliance.update) rootPoolPath;
   dataMemberA = "/dev/disk/by-partuuid/${root.dataPartUuidA}";
+  rootSubvolumes =
+    if config.appliance.rootStorage == "nvme-btrfs" then
+      {
+        "@root" = {
+          mountpoint = "/";
+          mountOptions = [
+            "degraded"
+            "compress=zstd:1"
+            "noatime"
+          ];
+        };
+        "@root-blank" = { };
+      }
+    else
+      { };
+  rootBlankPostCreateHook =
+    if config.appliance.rootStorage == "nvme-btrfs" then
+      ''
+        set -euo pipefail
+        root_blank_mount=$(mktemp -d)
+        mounted=0
+        cleanup() {
+          if [ "$mounted" -eq 1 ]; then umount "$root_blank_mount"; fi
+          rmdir "$root_blank_mount"
+        }
+        trap cleanup EXIT
+        mount -t btrfs -o degraded,subvolid=5 "$device" "$root_blank_mount"
+        mounted=1
+        blank="$root_blank_mount/@root-blank"
+        blank_ro=$(btrfs property get -ts "$blank" ro)
+        if ! (
+          set +f
+          shopt -s nullglob dotglob
+          blank_entries=("$blank"/*)
+          [ "''${#blank_entries[@]}" -eq 0 ]
+        ); then
+          echo "Refusing non-empty @root-blank template" >&2
+          exit 1
+        fi
+        if [ "$blank_ro" != "ro=true" ]; then
+          btrfs property set -ts "$blank" ro true
+        fi
+      ''
+    else
+      "";
 in
 {
   disko.devices.disk = {
@@ -86,8 +131,7 @@ in
                   "degraded"
                   "compress=zstd:1"
                   "noatime"
-                  "ro"
-                ];
+                ] ++ lib.optional config.appliance.storeReadOnly "ro";
               };
             };
           };
@@ -151,14 +195,18 @@ in
                 root.dataUuid
                 dataMemberA
               ];
-              subvolumes."@persist" = {
-                mountpoint = "/persist";
-                mountOptions = [
-                  "compress=zstd:1"
-                  "noatime"
-                  "degraded"
-                ];
-              };
+              subvolumes = {
+                "@persist" = {
+                  mountpoint = "/persist";
+                  mountOptions = [
+                    "compress=zstd:1"
+                    "noatime"
+                    "degraded"
+                  ];
+                };
+              }
+              // rootSubvolumes;
+              postCreateHook = rootBlankPostCreateHook;
             };
           };
           swap = {

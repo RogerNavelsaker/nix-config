@@ -58,6 +58,17 @@ end
 
 set -l target_parts (string split '@' -- "$target")
 set -l target_host $target_parts[2]
+if not command -sq tailscale
+    printf 'Refusing install: tailscale CLI is required to authenticate the rescue target.\n' >&2
+    exit 1
+end
+set -l tailnet_peer_count (tailscale status --json | jq -r --arg target "$target_host" '
+    [.Peer[]? | select(.Online == true) | ([.HostName, ((.DNSName // "") | rtrimstr("."))] + (.TailscaleIPs // [])) as $names | select($names | index($target) != null)] | length
+')
+if test $status -ne 0; or test "$tailnet_peer_count" != 1
+    printf 'Refusing install: target must match exactly one online Tailnet peer.\n' >&2
+    exit 1
+end
 set -l flake_attr ".#nixosConfigurations.$host"
 set -l expected_json (nix eval --no-write-lock-file --json --apply 'c: builtins.mapAttrs (_: d: d.device) c.config.disko.devices.disk' "$flake_attr")
 if test $status -ne 0
@@ -158,6 +169,8 @@ end
 
 printf 'Verifying the mounted bootstrap store and clearing its possibly stale Nix database...\n'
 set -l reset_store_db_command "set -eu; findmnt -n -T /mnt/nix/store -o TARGET | grep -Fx /mnt/nix/store; findmnt -n -T /mnt/nix/store -o FSTYPE | grep -Fx btrfs; findmnt -n -T /mnt/nix/store -o FSROOT | grep -Fx $expected_store_fsroot; if test -d /mnt/nix/var/nix/db; then findmnt -n -T /mnt/nix/var/nix/db -o TARGET | grep -Fxv /mnt/nix/store; rm -rf -- /mnt/nix/var/nix/db; fi; test ! -e /mnt/nix/var/nix/db"
+# NixOS Anywhere's kexec environment may have a different transient SSH host key.
+# This exception is limited to the same online Tailnet peer checked above.
 ssh -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "root@$target_host" "$reset_store_db_command"
 if test $status -ne 0
     printf 'Refusing to continue: bootstrap store identity or stale Nix DB cleanup check failed.\n' >&2

@@ -1721,11 +1721,11 @@
     "nix-secrets": {
       "flake": false,
       "locked": {
-        "lastModified": 1791370419,
-        "narHash": "sha256-+uBLQOVEotoHcIw40KVynqpS06VcpwtHPhFYYcp+oHE=",
+        "lastModified": 1794340809,
+        "narHash": "sha256-3IS66+kn6huqGCM9QnA6bWuF5ESeYS1KPzICMj8j1fo=",
         "owner": "RogerNavelsaker",
         "repo": "nix-secrets",
-        "rev": "cfd4a904c660ade9adcf3de8d9506fa07a8d679c",
+        "rev": "d242368c2812b70702450e1cdc590658a96eebe9",
         "type": "github"
       },
       "original": {

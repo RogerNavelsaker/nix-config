@@ -23,10 +23,25 @@ in
       description = "Prefix for versioned Nix store subvolumes and their update artifacts.";
     };
 
+    storeReadOnly = mkOption {
+      type = types.bool;
+      default = true;
+      description = "Mount the versioned appliance store subvolume read-only.";
+    };
+
     rootVersion = mkOption {
       type = types.str;
       default = "1";
       description = "Version of the appliance root payload and matching UKIs.";
+    };
+
+    rootStorage = mkOption {
+      type = types.enum [
+        "tmpfs"
+        "nvme-btrfs"
+      ];
+      default = "tmpfs";
+      description = "Backing for the ephemeral appliance root filesystem.";
     };
 
     rootSlot = mkOption {
@@ -50,6 +65,58 @@ in
       default = [ ];
       internal = true;
       description = "Additional slot-specific system closures included in the shared versioned root payload.";
+    };
+
+    bootstrapStoreSubvolume = mkOption {
+      type = types.nullOr types.str;
+      default = null;
+      internal = true;
+      description = "Temporary bootstrap store subvolume removed after the final appliance first boots.";
+    };
+
+    bootstrap = {
+      enable = mkOption {
+        type = types.bool;
+        default = false;
+        description = "Stage the final appliance image while installing this temporary switch-enabled system.";
+      };
+
+      finalStoreName = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+      };
+      finalRootVersion = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+      };
+      finalToplevelName = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+      };
+      finalStoreTarball = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+      };
+      finalStoreRegistration = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+      };
+      finalSlotAuki = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+      };
+      finalSlotAukiFile = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+      };
+      finalSlotBuki = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+      };
+      finalSlotBukiFile = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+      };
     };
 
     devices = {

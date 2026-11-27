@@ -102,17 +102,15 @@ let
       exit 1
     fi
     if [ "$#" -ne 1 ]; then
-      echo "Usage: appliance-update <new-version>" >&2
+      echo "Usage: appliance-update <new-version> | --latest" >&2
       exit 2
     fi
 
+    automatic=0
     version="$1"
-    case "$version" in
-      ""|*[!0-9]*) echo "Version must be a positive integer." >&2; exit 2 ;;
-    esac
-    if [ "$version" -lt 1 ]; then
-      echo "Version must be positive." >&2
-      exit 2
+    if [ "$version" = --latest ]; then
+      automatic=1
+      version=""
     fi
 
     active_version=$(${pkgs.gnused}/bin/sed -n 's/.*${name}[.]version=\([0-9][0-9]*\).*/\1/p' /proc/cmdline | ${pkgs.coreutils}/bin/head -n1)
@@ -126,6 +124,49 @@ let
       b) active_esp=${espBPath} ;;
       *) echo "Cannot identify the running USB slot from the kernel command line." >&2; exit 1 ;;
     esac
+    if [ "$active_slot" != "${config.appliance.rootSlot}" ]; then
+      echo "The running slot ($active_slot) does not match this system profile (${config.appliance.rootSlot})." >&2
+      exit 1
+    fi
+
+    if [ "$automatic" -eq 1 ]; then
+      sysupdate=${pkgs.systemd}/lib/systemd/systemd-sysupdate
+      if version=$("$sysupdate" --no-pager --component=${name} check-new); then
+        :
+      else
+        listing=$("$sysupdate" --no-pager --component=${name} --json=short list) || {
+          echo "Cannot determine whether an appliance update is available; see systemd-sysupdate diagnostics." >&2
+          exit 1
+        }
+        current_version=$(printf '%s' "$listing" | ${pkgs.jq}/bin/jq -r '.current // empty') || {
+          echo "systemd-sysupdate returned invalid version metadata." >&2
+          exit 1
+        }
+        latest_version=$(printf '%s' "$listing" | ${pkgs.jq}/bin/jq -r '.all[0] // empty') || {
+          echo "systemd-sysupdate returned invalid available-version metadata." >&2
+          exit 1
+        }
+        for listed_version in "$current_version" "$latest_version"; do
+          case "$listed_version" in
+            ""|*[!0-9]*) echo "Cannot validate systemd-sysupdate version metadata." >&2; exit 1 ;;
+          esac
+        done
+        if [ "$latest_version" -le "$current_version" ]; then
+          echo "No newer Nanoserver software version is available."
+          exit 0
+        fi
+        echo "systemd-sysupdate reports a candidate but check-new failed; refusing to stage." >&2
+        exit 1
+      fi
+    fi
+
+    case "$version" in
+      ""|*[!0-9]*) echo "Version must be a positive integer." >&2; exit 2 ;;
+    esac
+    if [ "$version" -lt 1 ]; then
+      echo "Version must be positive." >&2
+      exit 2
+    fi
     if [ "$version" -le "$active_version" ]; then
       echo "Refusing to install version $version over the running store version ($active_version)." >&2
       exit 1
@@ -175,9 +216,11 @@ let
       exit 1
     }
 
-    echo "This stages store version $version on the mirrored USB Btrfs filesystem; version $active_version remains bootable."
-    read -r -p "Type 'update-$version' to continue: " confirmation
-    [ "$confirmation" = "update-$version" ] || exit 1
+    echo "This stages software version $version; running version $active_version remains bootable."
+    if [ "$automatic" -eq 0 ]; then
+      read -r -p "Type 'update-$version' to continue: " confirmation
+      [ "$confirmation" = "update-$version" ] || exit 1
+    fi
 
     ${pkgs.systemd}/lib/systemd/systemd-sysupdate \
       --no-pager --component=${name} update "$version"
@@ -192,12 +235,24 @@ let
       echo "systemd-sysupdate did not install the requested registration metadata." >&2
       exit 1
     }
+    for esp in "${espAPath}" "${espBPath}"; do
+      uki_found=0
+      for uki in "$esp/EFI/Linux/${rootName}_''${version}"*.efi; do
+        [ -f "$uki" ] || continue
+        uki_found=1
+        break
+      done
+      [ "$uki_found" -eq 1 ] || {
+        echo "systemd-sysupdate did not install version $version's UKI on $esp." >&2
+        exit 1
+      }
+    done
     sync
 
     # The boot-loader entry ID omits the +tries-left-done boot-count suffix.
     uki_name="${rootName}_$version.efi"
     ${pkgs.systemd}/bin/bootctl --esp-path="$active_esp" set-oneshot "$uki_name"
-    echo "Store version $version is staged on both ESPs; reboot when ready."
+    echo "Software version $version is staged as the next slot; running version $active_version remains available. Reboot when ready."
   '';
 in
 {
@@ -225,6 +280,14 @@ in
           "systemd-tmpfiles-setup.service"
         ];
         requires = [ "persist.mount" ];
+        serviceConfig = {
+          ExecStart = lib.mkForce [
+            ""
+            "${updateScript}/bin/appliance-update --latest"
+          ];
+          Type = lib.mkForce "oneshot";
+          NotifyAccess = lib.mkForce "none";
+        };
       };
       tmpfiles.rules = [
         "d /persist/${name}/store-registrations 0755 root root -"

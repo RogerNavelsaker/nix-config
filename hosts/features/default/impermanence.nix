@@ -2,7 +2,7 @@
 # It imports impermanence, defines the basic persisted dirs, and ensures each
 # users' home persist dir exists and has the right permissions
 #
-# It works even if / is tmpfs, btrfs snapshot, or even not ephemeral at all.
+# It works even if / is tmpfs, btrfs snapshot, or not ephemeral at all.
 {
   lib,
   inputs,
@@ -36,11 +36,17 @@
     };
   };
 
+  # Ensure image-based appliance roots have a readable shell profile.
+  system.activationScripts.fix-profile-permissions = lib.mkIf (config.appliance.name != "appliance") {
+    deps = [ "etc" ];
+    text = "chmod 0644 /etc/profile";
+  };
+
   # Allow user-space programs to use FUSE for bind mounts
   programs.fuse.userAllowOther = true;
 
   # Automatically create and configure home persistence directories
-  # This ensures /persist/home/<user> exists with correct permissions
+  # This ensures /persist/home/<user> exists and has the correct permissions
   system.activationScripts.persistent-dirs.text =
     let
       mkHomePersist =

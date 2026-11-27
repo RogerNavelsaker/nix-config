@@ -84,7 +84,7 @@ in
           "degraded"
           "compress=zstd:1"
           "noatime"
-          "ro"
+          ] ++ lib.optional config.appliance.storeReadOnly "ro" ++ [
           "subvol=${storeSubvolume}"
           "x-systemd.device-timeout=30s"
         ];

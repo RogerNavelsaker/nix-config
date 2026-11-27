@@ -122,5 +122,6 @@
     fzf # fuzzy finder
     jq # JSON processor
     yq # YAML processor
+    nushell # Alternative shell; Fish remains configured
   ];
 }

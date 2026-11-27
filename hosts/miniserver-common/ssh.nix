@@ -1,5 +1,4 @@
-{ ... }:
-{
+_: {
   users.mutableUsers = false;
   users.users.rona = {
     isNormalUser = true;

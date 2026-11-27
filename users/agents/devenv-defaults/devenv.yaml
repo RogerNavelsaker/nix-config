@@ -1,0 +1,25 @@
+inputs:
+  nixpkgs:
+    url: github:cachix/devenv-nixpkgs/rolling
+  agentToolsNixpkgs:
+    url: github:NixOS/nixpkgs/331800de5053fcebacf6813adb5db9c9dca22a0c
+  seeds:
+    url: github:RogerNavelsaker/nixpkg-seeds/9bbf782b77488070e4f86f404f4b7b40af24d6a3
+    inputs:
+      nixpkgs:
+        follows: agentToolsNixpkgs
+  mulch:
+    url: github:RogerNavelsaker/nixpkg-mulch/890deec46fbee6334ceffd022e7069ff19c69da7
+    inputs:
+      nixpkgs:
+        follows: agentToolsNixpkgs
+  terrarium:
+    url: github:RogerNavelsaker/nixpkg-terrarium/76740f7f091c85b997bab7a11ff6ddb1c72ace0d
+    inputs:
+      nixpkgs:
+        follows: agentToolsNixpkgs
+  shared-config:
+    url: path:./.local/share/nix-config/agent-devenv-shared/@SHARED_CONFIG_HASH@
+    flake: false
+imports:
+  - shared-config

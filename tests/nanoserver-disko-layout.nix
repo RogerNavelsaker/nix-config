@@ -13,5 +13,5 @@ import ./miniserver-disko-layout.nix {
     pkgs
     self
     ;
-  hostname = "nanoserver-01";
+  hostname = "nanoserver-01-update-v4-a";
 }

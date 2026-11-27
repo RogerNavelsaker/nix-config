@@ -24,8 +24,16 @@ let
             serviceConfig.Type = "oneshot";
             serviceConfig.StandardOutput = "journal+console";
             script = ''
-              set -eux
-              test "$(${pkgs.coreutils}/bin/cat ${config.sops.secrets."rona-password".path})" = test-hash
+              set -eu
+              test "$(${pkgs.coreutils}/bin/cat ${config.sops.secrets."rona-password".path})" = test-password
+              test -s ${config.users.users.rona.hashedPasswordFile}
+              test "$(${pkgs.coreutils}/bin/stat -c %a ${config.users.users.rona.hashedPasswordFile})" = 400
+              test "$(${pkgs.coreutils}/bin/stat -c %a /run/nixos-user-password-hashes)" = 700
+              password_hash=$(${pkgs.gawk}/bin/awk -F: '$1 == "rona" { print $2 }' /etc/shadow)
+              case "$password_hash" in
+                \$y\$*) ;;
+                *) echo "Rona password was not stored as a yescrypt hash" >&2; exit 1 ;;
+              esac
               test "$(${pkgs.util-linux}/bin/findmnt -n -o FSTYPE /)" = tmpfs
               test "$(${pkgs.util-linux}/bin/findmnt -n -T /nix/store -o FSTYPE | ${pkgs.coreutils}/bin/head -n1)" = btrfs
               ${pkgs.util-linux}/bin/findmnt -n -T /nix/store -o FSROOT | ${pkgs.coreutils}/bin/head -n1 | grep -Fx "/${config.appliance.storeName}_${config.appliance.rootVersion}"
@@ -85,7 +93,30 @@ let
   diskConfig = diskoLib.testLib.prepareDiskoConfig {
     disko.devices = bootstrap.disko.devices;
   } (builtins.tail diskoLib.testLib.devices);
+  adminPasswordProbe = self.nixosConfigurations.miniserver-01.extendModules {
+    modules = [
+      ({ ... }: {
+        users.users.admin = {
+          isNormalUser = true;
+          hashedPasswordFile = "/run/secrets-for-users/admin-password";
+        };
+        sops.secrets."admin-password" = {
+          sopsFile = builtins.toFile "admin-test-password.yaml" "password: test-fixture\n";
+          key = "password";
+          mode = "0400";
+          neededForUsers = true;
+        };
+      })
+    ];
+  };
+  adminPasswordConfig = adminPasswordProbe.config;
 in
+assert bootstrap.users.users.rona.hashedPasswordFile == "/run/nixos-user-password-hashes/rona";
+assert builtins.elem "hash-sops-user-password-rona" bootstrap.system.activationScripts.users.deps;
+assert
+  adminPasswordConfig.users.users.admin.hashedPasswordFile == "/run/nixos-user-password-hashes/admin";
+assert builtins.elem "hash-sops-user-password-admin"
+  adminPasswordConfig.system.activationScripts.users.deps;
 pkgs.testers.runNixOSTest {
   name = "miniserver-bootstrap-install-activation";
   nodes.machine = { config, ... }: {
@@ -203,7 +234,7 @@ pkgs.testers.runNixOSTest {
       # Replace only the copied Nix-store SOPS inputs with disposable encrypted
       # fixtures whose age recipient is the staged /persist host key.
       machine.succeed('ssh-to-age -private-key -i /mnt/persist/etc/ssh/ssh_host_ed25519_key > /run/bootstrap-test.agekey')
-      machine.succeed('recipient=$(ssh-to-age -i /mnt/persist/etc/ssh/ssh_host_ed25519_key.pub); printf "password: test-hash\\n" > /run/password.yaml; sops --encrypt --age "$recipient" --encrypted-regex "^password$" /run/password.yaml > /run/password.sops.yaml')
+      machine.succeed('recipient=$(ssh-to-age -i /mnt/persist/etc/ssh/ssh_host_ed25519_key.pub); printf "password: test-password\\n" > /run/password.yaml; sops --encrypt --age "$recipient" --encrypted-regex "^password$" /run/password.yaml > /run/password.sops.yaml')
       machine.succeed('recipient=$(ssh-to-age -i /mnt/persist/etc/ssh/ssh_host_ed25519_key.pub); printf "tailscale:\\n  auth_key: disposable-test-key\\n" > /run/tailscale.yaml; sops --encrypt --age "$recipient" --encrypted-regex "^auth_key$" /run/tailscale.yaml > /run/tailscale.sops.yaml')
       machine.succeed("mount --bind /run/password.sops.yaml ${targetStoreFile passwordSopsFile}")
       machine.succeed("mount --bind /run/tailscale.sops.yaml ${targetStoreFile tailscaleSopsFile}")
@@ -212,6 +243,15 @@ pkgs.testers.runNixOSTest {
       # nixos-enter followed by switch-to-configuration boot with the installer flag.
       machine.succeed('NIXOS_INSTALL_BOOTLOADER=1 nixos-enter --root /mnt --command "set -e; hash -r; mount --rbind --mkdir / /mnt; mount --make-rslave /mnt; /run/current-system/bin/switch-to-configuration boot; umount -R /mnt"')
 
+      # The SOPS test value is plaintext; user activation must store a yescrypt hash.
+      machine.succeed("""
+        password_hash=$(awk -F: '$1 == "rona" { print $2 }' /mnt/etc/shadow)
+        case "$password_hash" in
+          \$y\$*) ;;
+          *) echo "Rona password was not stored as a yescrypt hash" >&2; exit 1 ;;
+        esac
+        test "$password_hash" != test-password
+      """)
       # Install activation successfully runs the SOPS setup against the staged key;
       # its /run output belongs to the install chroot and is not persistent here.
       machine.succeed('ssh-keygen -lf /run/extra-files/persist/etc/ssh/ssh_host_ed25519_key.pub | cut -d " " -f 2 > /run/staged-key.fingerprint')

@@ -28,5 +28,6 @@
       [
         "/var/cache"
         "/var/tmp"
+        "/var/lib/iwd"
       ];
 }

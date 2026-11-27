@@ -60,10 +60,5 @@ in
 
     environment.systemPackages = [ rescueWifiUp ];
 
-    # Ensure /var/lib/iwd exists before secrets activation runs
-    # This handles first boot before impermanence has restored the directory
-    systemd.tmpfiles.rules = [
-      "d /var/lib/iwd 0700 root root -"
-    ];
   };
 }

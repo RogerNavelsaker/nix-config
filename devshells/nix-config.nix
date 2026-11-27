@@ -4,7 +4,6 @@
   inputs,
   pkgs,
   mkProjectShell,
-  common,
   ...
 }:
 let

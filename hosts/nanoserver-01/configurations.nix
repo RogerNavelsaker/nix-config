@@ -145,7 +145,9 @@
     features.opt-in = [
       "appliance"
       "appliance-disko"
+      "herdr-server"
       "host-platform"
+      "host-operations"
       "passwordless-sudo"
       "wifi/NaCo"
     ];
@@ -153,6 +155,7 @@
       {
         appliance = {
           rootVersion = "4";
+          rootStorage = "nvme-btrfs";
           rootSlot = "a";
           storeClosureToplevels = [
             self.nixosConfigurations.nanoserver-01-update-v4-b.config.system.build.toplevel
@@ -172,7 +175,9 @@
     features.opt-in = [
       "appliance"
       "appliance-disko"
+      "herdr-server"
       "host-platform"
+      "host-operations"
       "passwordless-sudo"
       "wifi/NaCo"
     ];
@@ -180,6 +185,7 @@
       {
         appliance = {
           rootVersion = "4";
+          rootStorage = "nvme-btrfs";
           rootSlot = "b";
         };
       }

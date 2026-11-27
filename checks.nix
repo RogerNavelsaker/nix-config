@@ -3,6 +3,7 @@
   pkgs,
   lib,
   self,
+  herdr,
   diskoLib,
   diskoModule,
 }:
@@ -78,7 +79,23 @@ let
   '';
 
   nanoserverSlotUkiCheck = import ./tests/nanoserver-slot-uki.nix { inherit lib pkgs self; };
+  nanoserverWorkloadNixCheck = import ./tests/nanoserver-workload-nix.nix { inherit pkgs; };
+  nanoserverWorkloadPodmanCheck = import ./tests/nanoserver-workload-podman.nix { inherit pkgs; };
+  nanoserverWorkloadApplianceCheck = import ./tests/nanoserver-workload-appliance.nix {
+    inherit pkgs;
+    workload = self.packages.${pkgs.stdenv.hostPlatform.system}.nanoserver-workload-test;
+  };
   hostPlatformCheck = import ./tests/host-platform.nix { inherit lib pkgs self; };
+  herdrServerCheck = import ./tests/herdr-server.nix { inherit pkgs herdr; };
+  graftSecretRenderCheck = import ./tests/graft-secret-render.nix { inherit pkgs; };
+  miniserverBootstrapCheck =
+    import ./tests/miniserver-bootstrap.nix { inherit lib pkgs self; };
+  miniserverBootstrapStageCheck = import ./tests/miniserver-bootstrap-stage.nix {
+    inherit diskoLib diskoModule lib pkgs self;
+  };
+  miniserverBootstrapInstallCheck = import ./tests/miniserver-bootstrap-install.nix {
+    inherit diskoLib diskoModule lib pkgs self;
+  };
 
   actionlintCheck =
     pkgs.runCommand "github-actions-workflows-check"
@@ -111,6 +128,9 @@ let
         pkgs
         self
         ;
+    };
+    nanoserver-v4-root-boot = import ./tests/nanoserver-v4-root-boot.nix {
+      inherit diskoLib diskoModule lib pkgs self;
     };
   };
   miniserverDiskoTests = lib.optionalAttrs pkgs.stdenv.hostPlatform.isx86_64 (
@@ -172,10 +192,18 @@ nixosChecks
     ;
 
   nanoserver-01-slot-uki = nanoserverSlotUkiCheck;
+  nanoserver-workload-nix = nanoserverWorkloadNixCheck;
+  nanoserver-workload-podman = nanoserverWorkloadPodmanCheck;
+  nanoserver-workload-appliance = nanoserverWorkloadApplianceCheck;
   workflow-lint = actionlintCheck;
   host-platform = hostPlatformCheck;
+  herdr-server = herdrServerCheck;
+  graft-secret-render = graftSecretRenderCheck;
   nanoserver-v4-asset-size = nanoserverV4AssetSizeCheck;
 
+  miniserver-bootstrap = miniserverBootstrapCheck;
+  miniserver-bootstrap-stage = miniserverBootstrapStageCheck;
+  miniserver-bootstrap-install = miniserverBootstrapInstallCheck;
   # All checks combined
   all =
     pkgs.runCommand "all-checks"
@@ -190,9 +218,17 @@ nixosChecks
             featureStructureCheck
             passwordlessSudoCheck
             nanoserverSlotUkiCheck
+            nanoserverWorkloadNixCheck
+            nanoserverWorkloadPodmanCheck
+            nanoserverWorkloadApplianceCheck
             hostPlatformCheck
+            herdrServerCheck
+            graftSecretRenderCheck
             actionlintCheck
             nanoserverV4AssetSizeCheck
+            miniserverBootstrapCheck
+            miniserverBootstrapStageCheck
+            miniserverBootstrapInstallCheck
           ]
           ++ builtins.attrValues nanoserverDiskoTests
           ++ builtins.attrValues miniserverDiskoTests;

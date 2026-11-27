@@ -1,14 +1,16 @@
 { config, secrets, ... }:
 {
-  sops.useSystemdActivation = true;
-  sops.age.sshKeyPaths = builtins.map (hostKey: hostKey.path) (
-    builtins.filter (hostKey: hostKey.type == "ed25519") config.services.openssh.hostKeys
-  );
+  sops = {
+    useSystemdActivation = true;
+    age.sshKeyPaths = builtins.map (hostKey: hostKey.path) (
+      builtins.filter (hostKey: hostKey.type == "ed25519") config.services.openssh.hostKeys
+    );
 
-  sops.secrets."ts-auth-key" = {
-    sopsFile = secrets + "/hosts/${config.networking.hostName}/secrets.yaml";
-    key = "tailscale/auth_key";
-    mode = "0400";
+    secrets."ts-auth-key" = {
+      sopsFile = secrets + "/hosts/${config.networking.hostName}/secrets.yaml";
+      key = "tailscale/auth_key";
+      mode = "0400";
+    };
   };
 
   services.tailscale = {

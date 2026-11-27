@@ -51,6 +51,16 @@ else
   exit 81
 fi
 MOCK_NIX
+cat >"$tmp/bin/tailscale" <<'MOCK_TAILSCALE'
+#!/usr/bin/env bash
+set -euo pipefail
+[[ "$*" == "status --json" ]] || exit 88
+if [[ "${MOCK_TAILSCALE_MISMATCH:-0}" == 1 ]]; then
+  printf '{"Peer":{"nodekey:test":{"HostName":"other-node","DNSName":"other-node.example.ts.net.","Online":true,"TailscaleIPs":["100.64.0.2"]}}}'
+else
+  printf '{"Peer":{"nodekey:test":{"HostName":"rescue-test","DNSName":"rescue-test.example.ts.net.","Online":true,"TailscaleIPs":["100.64.0.1"]}}}'
+fi
+MOCK_TAILSCALE
 
 cat >"$tmp/bin/ssh" <<'MOCK_SSH'
 #!/usr/bin/env bash
@@ -133,16 +143,16 @@ else
   exit 87
 fi
 MOCK_SSH_KEYGEN
-chmod 0700 "$tmp/bin/nix" "$tmp/bin/ssh" "$tmp/bin/ssh-keygen"
+chmod 0700 "$tmp/bin/nix" "$tmp/bin/ssh" "$tmp/bin/ssh-keygen" "$tmp/bin/tailscale"
 
 run_case() {
-  local name="$1" fail_cleanup="$2" expected_status="$3"
+  local name="$1" fail_cleanup="$2" expected_status="$3" tailnet_mismatch="${4:-0}"
   local case_dir="$tmp/$name" output="$tmp/$name.out" status
   mkdir -p "$case_dir"
   local trace="$case_dir/trace"
   set +e
   printf 'WIPE miniserver-01\n' | \
-    PATH="$tmp/bin:$PATH" TERM=dumb MOCK_TRACE="$trace" MOCK_FAIL_CLEANUP="$fail_cleanup" \
+    PATH="$tmp/bin:$PATH" TERM=dumb MOCK_TRACE="$trace" MOCK_FAIL_CLEANUP="$fail_cleanup" MOCK_TAILSCALE_MISMATCH="$tailnet_mismatch" \
       fish --no-config -c 'function isatty; return 0; end; source "$argv[1]" "$argv[2]" "$argv[3]" "$argv[4]"' \
       -- "$installer" miniserver-01 rona@rescue-test "$stage" >"$output" 2>&1
   status=$?
@@ -179,4 +189,5 @@ if [[ "${failed_events[*]}" != "${expected_failed_events[*]}" ]]; then
   exit 1
 fi
 
+run_case untrusted-target 0 1 1
 printf 'install-rescue-host phase orchestration mock test passed\n'

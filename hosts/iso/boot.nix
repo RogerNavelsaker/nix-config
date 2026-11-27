@@ -1,9 +1,11 @@
 { lib, ... }:
 {
-  boot.loader.grub.memtest86.enable = lib.mkForce false;
-  boot.loader.timeout = 10;
-  # Keep the rescue environment usable after its boot medium is detached.
-  boot.kernelParams = [ "copytoram" ];
+  boot = {
+    loader.grub.memtest86.enable = lib.mkForce false;
+    loader.timeout = 10;
+    # Keep the rescue environment usable after its boot medium is detached.
+    kernelParams = [ "copytoram" ];
+  };
   isoImage.configurationName = "WAN";
 
   # These specialisations become explicit ISO GRUB entries. The WAN base
